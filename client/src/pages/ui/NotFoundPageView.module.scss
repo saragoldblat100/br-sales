@@ -1,0 +1,35 @@
+.page {
+  @apply min-h-screen bg-gray-50 flex items-center justify-center p-4;
+}
+
+.content {
+  @apply text-center;
+}
+
+.code {
+  @apply text-9xl font-bold text-gray-200;
+}
+
+.title {
+  @apply text-2xl font-semibold text-gray-900 mt-4;
+}
+
+.subtitle {
+  @apply text-gray-600 mt-2;
+}
+
+.actions {
+  @apply mt-8 flex items-center justify-center gap-4;
+}
+
+.primaryButton {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+}
+
+.secondaryButton {
+  @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300;
+}
+
+.buttonIcon {
+  @apply w-5 h-5;
+}

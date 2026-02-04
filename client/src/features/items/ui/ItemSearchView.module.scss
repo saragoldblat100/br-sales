@@ -1,0 +1,79 @@
+.page {
+  @apply space-y-4;
+}
+
+.modeCard {
+  @apply bg-white rounded-xl shadow-soft p-4;
+}
+
+.modeGrid {
+  @apply flex flex-wrap gap-2;
+}
+
+.modeButton {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200;
+}
+
+.modeActive {
+  @apply flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-primary text-white;
+}
+
+.modeIcon {
+  @apply w-4 h-4;
+}
+
+.modeIconSpecial {
+  @apply text-yellow-600;
+}
+
+.modeCount {
+  @apply px-2 py-0.5 rounded-full bg-white/20 text-xs font-medium;
+}
+
+.searchCard {
+  @apply bg-white rounded-xl shadow-soft p-4;
+}
+
+.searchInputWrap {
+  @apply relative;
+}
+
+.searchIconWrap {
+  @apply absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none;
+}
+
+.searchIcon {
+  @apply w-5 h-5 text-gray-400;
+}
+
+.searchInput {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors pr-10 text-right;
+}
+
+.select {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors text-right;
+}
+
+.resultsCard {
+  @apply bg-white rounded-xl shadow-soft p-4;
+}
+
+.loading {
+  @apply flex items-center justify-center py-12;
+}
+
+.loadingSpinner {
+  @apply w-8 h-8 text-primary animate-spin border-2 border-current border-t-transparent rounded-full;
+}
+
+.emptyState {
+  @apply text-center py-12 text-gray-500;
+}
+
+.emptyIcon {
+  @apply w-12 h-12 mx-auto mb-4 text-gray-300;
+}
+
+.itemsGrid {
+  @apply grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4;
+}

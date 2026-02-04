@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="cardboardTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4a574"/>
+      <stop offset="100%" style="stop-color:#c4956a"/>
+    </linearGradient>
+    <linearGradient id="cardboardLeft" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#b8865a"/>
+      <stop offset="100%" style="stop-color:#a07850"/>
+    </linearGradient>
+    <linearGradient id="cardboardRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c9a06a"/>
+      <stop offset="100%" style="stop-color:#b08555"/>
+    </linearGradient>
+  </defs>
+  <!-- Cardboard Box 3D -->
+  <!-- Top face -->
+  <polygon points="50,15 85,32 50,49 15,32" fill="url(#cardboardTop)"/>
+  <!-- Left face -->
+  <polygon points="15,32 50,49 50,82 15,65" fill="url(#cardboardLeft)"/>
+  <!-- Right face -->
+  <polygon points="50,49 85,32 85,65 50,82" fill="url(#cardboardRight)"/>
+  <!-- Tape on top -->
+  <rect x="42" y="24" width="16" height="6" fill="#d4b896" transform="rotate(-25, 50, 27)"/>
+  <!-- Box lines -->
+  <line x1="50" y1="49" x2="50" y2="82" stroke="#8b6914" stroke-width="1" opacity="0.4"/>
+  <line x1="15" y1="32" x2="50" y2="49" stroke="#e8d4b8" stroke-width="1" opacity="0.5"/>
+</svg>

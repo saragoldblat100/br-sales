@@ -1,0 +1,55 @@
+.page {
+  @apply min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center p-4;
+}
+
+.container {
+  @apply w-full max-w-md animate-fade-in;
+}
+
+.logoSection {
+  @apply text-center mb-8;
+}
+
+.logoImage {
+  @apply h-20 mx-auto mb-4;
+}
+
+.title {
+  @apply text-3xl font-bold text-primary;
+}
+
+.subtitle {
+  @apply text-gray-600 mt-2;
+}
+
+.card {
+  @apply bg-white rounded-lg shadow-soft p-6;
+}
+
+.cardHeader {
+  @apply text-center mb-6;
+}
+
+.cardTitle {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.cardSubtitle {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+.footer {
+  @apply text-center text-sm text-gray-500 mt-6;
+}
+
+.loadingPage {
+  @apply min-h-screen flex items-center justify-center bg-gray-50 gap-3;
+}
+
+.spinner {
+  @apply animate-spin h-6 w-6 border-2 border-primary-500 border-t-transparent rounded-full;
+}
+
+.loadingLabel {
+  @apply text-sm text-gray-600;
+}

@@ -1,0 +1,59 @@
+.form {
+  @apply space-y-6;
+}
+
+.error {
+  @apply bg-danger-50 border border-danger-200 rounded-lg p-4 flex items-start gap-3;
+}
+
+.errorIcon {
+  @apply w-5 h-5 text-danger-500 flex-shrink-0 mt-0.5;
+}
+
+.errorTitle {
+  @apply text-sm font-medium text-danger-800;
+}
+
+.errorMessage {
+  @apply text-sm text-danger-600 mt-1;
+}
+
+.field {
+  @apply space-y-1;
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-700;
+}
+
+.input {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors;
+}
+
+.passwordField {
+  @apply relative;
+}
+
+.inputWithToggle {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors pl-10;
+}
+
+.passwordToggle {
+  @apply absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600;
+}
+
+.toggleIcon {
+  @apply w-5 h-5;
+}
+
+.submit {
+  @apply inline-flex w-full items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors duration-200 bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.submitIcon {
+  @apply w-5 h-5;
+}
+
+.spinner {
+  @apply animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full;
+}

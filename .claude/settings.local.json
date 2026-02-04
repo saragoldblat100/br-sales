@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(npx tsx:*)",
+      "Bash(dir:*)",
+      "Bash(npx tsc:*)",
+      "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5ODFlOTI3MmE2ZDAzNzdlMDRjZmVlOCIsInVzZXJuYW1lIjoic2FyYSIsImlhdCI6MTc3MDEyMTUxOCwiZXhwIjoxNzcwMTUwMzE4fQ.zR1wXekFvfFUYCDMN5SQ1PRwhObXX5arEFQKpka5snU\")",
+      "Bash(npm install:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git reset:*)",
+      "Bash(findstr:*)"
+    ]
+  }
+}

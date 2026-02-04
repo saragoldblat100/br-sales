@@ -1,0 +1,187 @@
+.overlay {
+  @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4;
+}
+
+.modal {
+  @apply bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto animate-scale-in;
+}
+
+.header {
+  @apply sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between;
+}
+
+.headerTitle {
+  @apply text-xl font-semibold text-gray-900;
+}
+
+.closeButton {
+  @apply p-2 hover:bg-gray-100 rounded-full transition-colors;
+}
+
+.closeIcon {
+  @apply w-5 h-5 text-gray-500;
+}
+
+.body {
+  @apply p-6 space-y-6;
+}
+
+.mainInfo {
+  @apply flex gap-6;
+}
+
+.imageWrap {
+  @apply w-48 h-48 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0;
+}
+
+.image {
+  @apply w-full h-full object-contain;
+}
+
+.imageFallback {
+  @apply w-full h-full flex items-center justify-center;
+}
+
+.imageFallbackIcon {
+  @apply w-16 h-16 text-gray-300;
+}
+
+.details {
+  @apply flex-1 space-y-3;
+}
+
+.itemTitle {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.itemSubtitle {
+  @apply text-gray-600;
+}
+
+.itemCode {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+.metaGrid {
+  @apply grid grid-cols-2 gap-4 text-sm;
+}
+
+.metaLabel {
+  @apply text-gray-500;
+}
+
+.metaValue {
+  @apply font-medium mr-2;
+}
+
+.priceSource {
+  @apply inline-flex items-center gap-1 px-3 py-1 rounded-full bg-gray-100 text-sm;
+}
+
+.priceSourceLabel {
+  @apply text-gray-600;
+}
+
+.priceSourceValue {
+  @apply font-medium;
+}
+
+.currencyToggle {
+  @apply flex justify-center;
+}
+
+.currencyButton {
+  @apply px-4 py-2 rounded-md transition-colors text-gray-600 hover:bg-gray-100;
+}
+
+.currencyActive {
+  @apply px-4 py-2 rounded-md transition-colors bg-primary text-white;
+}
+
+.loading {
+  @apply flex items-center justify-center py-8;
+}
+
+.loadingIcon {
+  @apply w-8 h-8 text-primary animate-spin;
+}
+
+.error {
+  @apply bg-danger-50 border border-danger-200 rounded-lg p-4 flex items-center gap-3 text-danger-700;
+}
+
+.errorIcon {
+  @apply w-5 h-5 text-danger-500 flex-shrink-0;
+}
+
+.pricingCard {
+  @apply bg-gray-50 rounded-xl p-4 space-y-4;
+}
+
+.pricingGrid {
+  @apply grid grid-cols-2 gap-4;
+}
+
+.pricingBox {
+  @apply text-center p-3 bg-white rounded-lg;
+}
+
+.pricingLabel {
+  @apply text-sm text-gray-500;
+}
+
+.pricingValue {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.quantityRow {
+  @apply flex items-center justify-center gap-4;
+}
+
+.qtyButton {
+  @apply w-10 h-10 rounded-full bg-white border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors;
+}
+
+.qtyIcon {
+  @apply w-4 h-4;
+}
+
+.qtyInputWrap {
+  @apply text-center;
+}
+
+.qtyInput {
+  @apply w-20 text-center text-xl font-semibold border border-gray-300 rounded-lg py-2;
+}
+
+.qtyLabel {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+.total {
+  @apply text-center pt-4 border-t border-gray-200;
+}
+
+.totalLabel {
+  @apply text-sm text-gray-500;
+}
+
+.totalValue {
+  @apply text-3xl font-bold text-primary;
+}
+
+.totalMeta {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+.footer {
+  @apply sticky bottom-0 bg-white border-t border-gray-200 p-4;
+}
+
+.addButton {
+  @apply inline-flex w-full items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium transition-colors duration-200 bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.addIcon {
+  @apply w-5 h-5;
+}

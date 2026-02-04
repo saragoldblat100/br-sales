@@ -1,0 +1,131 @@
+.card {
+  @apply bg-white rounded-xl shadow-soft p-6 animate-fade-in;
+}
+
+.cardTitle {
+  @apply text-xl font-semibold text-gray-900 mb-4;
+}
+
+.searchWrapper {
+  @apply relative mb-4;
+}
+
+.searchIconWrapper {
+  @apply absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none;
+}
+
+.searchIcon {
+  @apply w-5 h-5 text-gray-400;
+}
+
+.spinnerIcon {
+  @apply w-5 h-5 text-gray-400 animate-spin;
+}
+
+.searchInput {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors pr-10 text-right;
+}
+
+.results {
+  @apply border border-gray-200 rounded-lg max-h-64 overflow-y-auto mb-4;
+}
+
+.emptyState {
+  @apply p-4 text-center text-gray-500;
+}
+
+.linkButton {
+  @apply mt-2 text-primary hover:text-primary-dark font-medium;
+}
+
+.resultButton {
+  @apply w-full px-4 py-3 text-right hover:bg-gray-50 transition-colors flex items-center justify-between disabled:opacity-50;
+}
+
+.resultName {
+  @apply font-medium text-gray-900;
+}
+
+.resultCode {
+  @apply text-sm text-gray-500;
+}
+
+.resultSpinner {
+  @apply w-5 h-5 text-primary animate-spin;
+}
+
+.ghostButton {
+  @apply inline-flex w-full items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 bg-transparent text-gray-600 hover:bg-gray-100;
+}
+
+.createForm {
+  @apply space-y-4 mt-4 p-4 bg-gray-50 rounded-lg;
+}
+
+.label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.input {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors text-right;
+}
+
+.error {
+  @apply flex items-center gap-2 text-danger-500 text-sm;
+}
+
+.errorIcon {
+  @apply w-4 h-4;
+}
+
+.actions {
+  @apply flex gap-3;
+}
+
+.primaryButton {
+  @apply inline-flex flex-1 items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 bg-primary-600 text-white hover:bg-primary-700 focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.secondaryButton {
+  @apply inline-flex flex-1 items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300;
+}
+
+.buttonIcon {
+  @apply w-5 h-5;
+}
+
+.buttonIconSmall {
+  @apply w-4 h-4 ml-2;
+}
+
+.selectedCard {
+  @apply bg-white rounded-xl shadow-soft p-6 animate-fade-in;
+}
+
+.selectedHeader {
+  @apply flex items-center justify-between;
+}
+
+.selectedInfo {
+  @apply flex items-center gap-4;
+}
+
+.avatar {
+  @apply w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center;
+}
+
+.avatarIcon {
+  @apply w-6 h-6 text-primary;
+}
+
+.selectedName {
+  @apply font-semibold text-gray-900;
+}
+
+.selectedCode {
+  @apply text-sm text-gray-500;
+}
+
+.selectedNote {
+  @apply text-xs text-primary mt-1;
+}

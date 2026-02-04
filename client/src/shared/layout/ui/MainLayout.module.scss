@@ -1,0 +1,11 @@
+.layout {
+  @apply min-h-screen bg-gray-50 flex;
+}
+
+.main {
+  @apply flex-1 flex flex-col;
+}
+
+.content {
+  @apply flex-1 p-6 overflow-auto;
+}

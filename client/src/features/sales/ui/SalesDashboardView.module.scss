@@ -1,0 +1,61 @@
+.page {
+  @apply min-h-screen bg-gray-50;
+}
+
+.header {
+  @apply bg-white shadow-soft sticky top-0 z-40;
+}
+
+.headerInner {
+  @apply max-w-7xl mx-auto px-4 py-4 flex items-center justify-between;
+}
+
+.headerLeft {
+  @apply flex items-center gap-4;
+}
+
+.backButton {
+  @apply flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors;
+}
+
+.backIcon {
+  @apply w-5 h-5;
+}
+
+.title {
+  @apply text-xl font-bold text-primary;
+}
+
+.userName {
+  @apply text-sm text-gray-500;
+}
+
+.main {
+  @apply max-w-7xl mx-auto px-4 py-6;
+}
+
+.layoutGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .layoutGrid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.mainColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.sideColumn {
+  min-width: 0;
+}
+
+.sticky {
+  @apply sticky top-24;
+}

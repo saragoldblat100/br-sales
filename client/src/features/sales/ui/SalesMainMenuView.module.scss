@@ -1,0 +1,99 @@
+.page {
+  @apply min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 p-6;
+}
+
+.container {
+  @apply max-w-4xl mx-auto;
+}
+
+.header {
+  @apply flex items-center justify-between mb-12;
+}
+
+.userRow {
+  @apply flex items-center gap-4;
+}
+
+.userAvatar {
+  @apply w-14 h-14 bg-white rounded-full shadow-soft flex items-center justify-center;
+}
+
+.userIcon {
+  @apply w-7 h-7 text-primary;
+}
+
+.title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.subtitle {
+  @apply text-gray-600;
+}
+
+.logoutButton {
+  @apply flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-900 hover:bg-white/50 rounded-lg transition-colors;
+}
+
+.logoutIcon {
+  @apply w-5 h-5;
+}
+
+.modulesGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .modulesGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.cardBase {
+  @apply rounded-2xl p-8 shadow-soft transition-all duration-300 transform hover:scale-105 hover:shadow-large text-center;
+}
+
+.cardPrimary {
+  @apply cardBase bg-primary text-white hover:bg-primary-dark;
+}
+
+.cardSecondary {
+  @apply cardBase bg-white text-primary border-2 border-primary hover:bg-gray-50;
+}
+
+.cardLight {
+  @apply cardBase bg-secondary text-white hover:bg-secondary-dark;
+}
+
+.cardContent {
+  @apply flex flex-col items-center gap-4;
+}
+
+.iconWrap {
+  @apply w-20 h-20 rounded-full flex items-center justify-center bg-white/20;
+}
+
+.iconWrapSecondary {
+  @apply w-20 h-20 rounded-full flex items-center justify-center bg-primary-100;
+}
+
+.cardIcon {
+  @apply w-10 h-10;
+}
+
+.cardTitle {
+  @apply text-2xl font-bold mb-2;
+}
+
+.description {
+  @apply text-sm opacity-90;
+}
+
+.descriptionMuted {
+  @apply text-sm text-gray-500;
+}
+
+.footer {
+  @apply mt-12 text-center text-sm text-gray-500;
+}

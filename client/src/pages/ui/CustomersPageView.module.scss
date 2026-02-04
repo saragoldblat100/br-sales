@@ -1,0 +1,39 @@
+.page {
+  @apply space-y-6;
+}
+
+.header {
+  @apply flex items-center justify-between;
+}
+
+.title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.subtitle {
+  @apply text-gray-600 mt-1;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-sm border border-gray-200;
+}
+
+.cardBody {
+  @apply p-6;
+}
+
+.searchWrapper {
+  @apply relative;
+}
+
+.searchIcon {
+  @apply absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400;
+}
+
+.searchInput {
+  @apply w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-colors pr-10;
+}
+
+.placeholder {
+  @apply text-gray-500 text-center py-12;
+}
