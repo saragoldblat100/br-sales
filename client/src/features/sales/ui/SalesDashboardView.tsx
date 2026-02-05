@@ -7,7 +7,6 @@ interface SalesDashboardViewProps {
   onLogout: () => void;
   customerSearch: ReactNode;
   itemSearch?: ReactNode;
-  cart: ReactNode;
   showItemSearch: boolean;
 }
 
@@ -19,7 +18,6 @@ export function SalesDashboardView({
   onLogout,
   customerSearch,
   itemSearch,
-  cart,
   showItemSearch,
 }: SalesDashboardViewProps) {
   // Customer selection screen (tablet-optimized, matching main menu style)

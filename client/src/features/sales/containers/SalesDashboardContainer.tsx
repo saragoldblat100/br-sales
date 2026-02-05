@@ -86,7 +86,6 @@ export function SalesDashboardContainer() {
         ) : null
       }
       showItemSearch={!!selectedCustomer?.customer?.customerCode}
-      cart={null}
     />
   );
 }
