@@ -22,7 +22,7 @@ const envSchema = z.object({
   JWT_EXPIRES_IN: z.string().default('8h'),
 
   // CORS
-  CLIENT_URL: z.string().url().default('http://localhost:5174'),
+  CLIENT_URL: z.string().default('http://localhost:5174'),
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes

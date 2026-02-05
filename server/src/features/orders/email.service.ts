@@ -148,7 +148,6 @@ const generateOrderEmailText = (order: IOrder): string => {
 פרטי לקוח
 ---------
 שם לקוח: ${order.customerName}
-קוד לקוח: ${order.customerCode}
 
 פריטים
 ------
@@ -156,7 +155,6 @@ ${lines}
 
 סיכום
 -----
-סה"כ CBM: ${order.totalCBM.toFixed(3)}
 ${totals}
 ${order.notes ? `הערות: ${order.notes}` : ''}
 
