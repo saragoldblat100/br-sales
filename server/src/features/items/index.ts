@@ -5,3 +5,7 @@ export { Category } from './category.model';
 export type { ICategory } from './category.model';
 export { SpecialPrice } from './specialPrice.model';
 export type { ISpecialPrice } from './specialPrice.model';
+export { FreightRate } from './freightRate.model';
+export type { IFreightRate } from './freightRate.model';
+export { MarginRule } from './marginRule.model';
+export type { IMarginRule } from './marginRule.model';

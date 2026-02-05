@@ -4,6 +4,8 @@ import { asyncHandler } from '@/shared/utils';
 import { Item } from './item.model';
 import { Category } from './category.model';
 import { SpecialPrice } from './specialPrice.model';
+import { FreightRate } from './freightRate.model';
+import { MarginRule } from './marginRule.model';
 import { getCurrentRate } from '@/features/currency';
 
 const router = Router();
@@ -153,8 +155,39 @@ router.get(
 );
 
 /**
+ * GET /api/sales/items/special/:customerCode - Get items with special prices for customer
+ */
+router.get(
+  '/items/special/:customerCode',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { customerCode } = req.params;
+
+    // Find all special prices for this customer
+    const specialPrices = await SpecialPrice.find({ customerCode });
+
+    if (specialPrices.length === 0) {
+      res.json({ items: [] });
+      return;
+    }
+
+    // Get all item codes with special prices
+    const itemCodes = specialPrices.map(sp => sp.itemCode);
+
+    // Find the items
+    const items = await Item.find({
+      itemCode: { $in: itemCodes },
+      isActive: true,
+    }).populate('categoryId', 'name nameEn nameHe');
+
+    // Add special price info
+    const itemsWithPrices = await addSpecialPricesToItems(items, customerCode);
+    res.json({ items: itemsWithPrices });
+  })
+);
+
+/**
  * POST /api/sales/items/:itemId/calculate-price - Calculate item price
- * Logic copied from supplier-price-form priceCalculator.js
+ * Full implementation based on supplier-price-form priceCalculator.js
  */
 router.post(
   '/items/:itemId/calculate-price',
@@ -170,7 +203,37 @@ router.post(
 
     // Get current USD rate (with margin already applied)
     const usdRate = await getCurrentRate();
-    const usdToIls = usdRate || 3.7; // Default fallback
+
+    // If no rate available, return error
+    if (!usdRate) {
+      res.status(400).json({
+        error: true,
+        message: 'אין שער דולר זמין במערכת',
+        details: 'נדרש להכניס שער דולר ידנית או להמתין לעדכון מבנק ישראל'
+      });
+      return;
+    }
+
+    const usdToIls = usdRate;
+
+    // Validate required item fields
+    const missingFields: string[] = [];
+
+    if (!item.supplierPrice || item.supplierPrice === 0) {
+      missingFields.push('מחיר ספק');
+    }
+
+    if (!item.boxCBM || item.boxCBM === 0) {
+      missingFields.push('נפח קרטון (CBM)');
+    }
+
+    if (!item.qtyPerCarton || item.qtyPerCarton === 0) {
+      missingFields.push('כמות יחידות בקרטון');
+    }
+
+    if (!item.categoryId) {
+      missingFields.push('קטגוריה');
+    }
 
     const qtyPerCarton = item.qtyPerCarton || 1;
     const boxCBM = item.boxCBM || 0;
@@ -190,11 +253,9 @@ router.post(
         let sellingPricePerCartonILS: number;
 
         if (isUSD) {
-          // Special price in USD
           sellingPricePerCartonUSD = sp.specialPrice;
           sellingPricePerCartonILS = sp.specialPrice * usdToIls;
         } else {
-          // Special price in ILS
           sellingPricePerCartonILS = sp.specialPrice;
           sellingPricePerCartonUSD = sp.specialPrice / usdToIls;
         }
@@ -221,43 +282,63 @@ router.post(
 
         res.json({
           success: true,
-          item: {
-            _id: item._id,
-            itemCode: item.itemCode,
-            englishDescription: item.englishDescription,
-            nameHe: item.nameHe,
-            imageUrl: item.imageUrl,
-            categoryId: item.categoryId,
-            qtyPerCarton: item.qtyPerCarton,
-            boxCBM: item.boxCBM,
-            cartonHeight: item.cartonHeight,
-            cartonLength: item.cartonLength,
-            cartonWidth: item.cartonWidth,
-            lastSalesOrderPrice: item.lastSalesOrderPrice,
-            lastSalesOrderCurrency: item.lastSalesOrderCurrency,
-            lastSalesOrderDate: item.lastSalesOrderDate,
-            lastSalesOrderNumber: item.lastSalesOrderNumber,
-          },
+          item: buildItemResponse(item),
           pricing,
         });
         return;
       }
     }
 
+    // If missing critical fields for calculation (not special price), return error
+    if (missingFields.length > 0) {
+      res.status(400).json({
+        error: true,
+        message: 'לא ניתן לחשב מחיר - חסרים נתונים',
+        missingFields,
+        itemCode: item.itemCode,
+        itemName: item.nameHe || item.englishDescription
+      });
+      return;
+    }
+
     // No special price - calculate regular price
     // 1. Supplier price per carton (in USD)
     const supplierPricePerCarton = item.supplierPrice || 0;
 
-    // 2. Freight cost calculation
-    const freightCostPerContainer = 4700; // Default freight cost
+    // 2. Freight cost from database
+    const freightRate = await FreightRate.findOne({
+      portOfOrigin,
+      containerSizeCBM,
+      isActive: true,
+    }).sort({ validFrom: -1 });
+
+    const freightCostPerContainer = freightRate ? freightRate.freightCost : 4700;
     const freightCostPerCBM = freightCostPerContainer / containerSizeCBM;
     const freightCostPerCarton = freightCostPerCBM * boxCBM;
 
     // 3. Total cost per carton (in USD)
     const totalCostPerCarton = supplierPricePerCarton + freightCostPerCarton;
 
-    // 4. Margin percentage (default 30%)
-    const marginPercentage = 30;
+    // 4. Margin percentage from database
+    const marginRule = await MarginRule.findOne({
+      categoryId: item.categoryId,
+      isActive: true,
+    }).sort({ validFrom: -1 });
+
+    // If no margin rule found for category, return error
+    if (!marginRule) {
+      res.status(400).json({
+        error: true,
+        message: 'לא ניתן לחשב מחיר - חסר אחוז רווח לקטגוריה',
+        missingFields: ['אחוז רווח'],
+        itemCode: item.itemCode,
+        itemName: item.nameHe || item.englishDescription,
+        categoryId: item.categoryId
+      });
+      return;
+    }
+
+    const marginPercentage = marginRule.marginPercentage;
 
     // 5. Calculate selling price
     const calculatedPricePerCartonUSD = totalCostPerCarton * (1 + marginPercentage / 100);
@@ -306,6 +387,12 @@ router.post(
       freightCostPerCarton: parseFloat(freightCostPerCarton.toFixed(2)),
       totalCostPerCarton: parseFloat(totalCostPerCarton.toFixed(2)),
       marginPercentage,
+      // Calculated prices (before comparison)
+      calculatedPricePerCartonUSD: parseFloat(calculatedPricePerCartonUSD.toFixed(2)),
+      calculatedPricePerUnitUSD: parseFloat((calculatedPricePerCartonUSD / qtyPerCarton).toFixed(2)),
+      calculatedPricePerCartonILS: parseFloat(calculatedPricePerCartonILS.toFixed(2)),
+      calculatedPricePerUnitILS: parseFloat((calculatedPricePerCartonILS / qtyPerCarton).toFixed(2)),
+      // Final prices (after comparison with last sale)
       sellingPricePerCartonUSD: parseFloat(finalPricePerCartonUSD.toFixed(2)),
       sellingPricePerUnitUSD: parseFloat((finalPricePerCartonUSD / qtyPerCarton).toFixed(2)),
       sellingPricePerCartonILS: parseFloat(finalPricePerCartonILS.toFixed(2)),
@@ -314,6 +401,7 @@ router.post(
       requestedQuantity,
       numberOfCartons,
       totalCBM: parseFloat(totalCBM.toFixed(3)),
+      // Last sale info for reference
       lastSalesOrderPrice: item.lastSalesOrderPrice || null,
       lastSalesOrderCurrency: item.lastSalesOrderCurrency || null,
       lastSalesOrderDate: item.lastSalesOrderDate || null,
@@ -321,26 +409,33 @@ router.post(
 
     res.json({
       success: true,
-      item: {
-        _id: item._id,
-        itemCode: item.itemCode,
-        englishDescription: item.englishDescription,
-        nameHe: item.nameHe,
-        imageUrl: item.imageUrl,
-        categoryId: item.categoryId,
-        qtyPerCarton: item.qtyPerCarton,
-        boxCBM: item.boxCBM,
-        cartonHeight: item.cartonHeight,
-        cartonLength: item.cartonLength,
-        cartonWidth: item.cartonWidth,
-        lastSalesOrderPrice: item.lastSalesOrderPrice,
-        lastSalesOrderCurrency: item.lastSalesOrderCurrency,
-        lastSalesOrderDate: item.lastSalesOrderDate,
-        lastSalesOrderNumber: item.lastSalesOrderNumber,
-      },
+      item: buildItemResponse(item),
       pricing,
     });
   })
 );
+
+/**
+ * Helper to build item response object
+ */
+function buildItemResponse(item: any) {
+  return {
+    _id: item._id,
+    itemCode: item.itemCode,
+    englishDescription: item.englishDescription,
+    nameHe: item.nameHe,
+    imageUrl: item.imageUrl,
+    categoryId: item.categoryId,
+    qtyPerCarton: item.qtyPerCarton,
+    boxCBM: item.boxCBM,
+    cartonHeight: item.cartonHeight,
+    cartonLength: item.cartonLength,
+    cartonWidth: item.cartonWidth,
+    lastSalesOrderPrice: item.lastSalesOrderPrice,
+    lastSalesOrderCurrency: item.lastSalesOrderCurrency,
+    lastSalesOrderDate: item.lastSalesOrderDate,
+    lastSalesOrderNumber: item.lastSalesOrderNumber,
+  };
+}
 
 export default router;
