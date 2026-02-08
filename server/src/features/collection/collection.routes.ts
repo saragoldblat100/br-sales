@@ -307,15 +307,20 @@ router.post(
       const caseNumber = row.caseNumber;
 
       if (!customer.cases.has(caseNumber)) {
+        // Column K contains the total for the entire case - take it once when creating the case
         customer.cases.set(caseNumber, {
           caseNumber,
           orderNumber: row.orderNumber,
           deliveryNoteNumber: row.deliveryNoteNumber,
           expectedArrivalDate: row.expectedArrivalDate,
           items: [],
-          caseTotal: 0,
-          caseTotalWithVAT: 0,
+          caseTotal: row.totalWithVAT || 0,
+          caseTotalWithVAT: row.totalWithVAT || 0,
         });
+
+        // Add to customer total only once per case
+        customer.totalWithVAT += row.totalWithVAT || 0;
+        customer.totalAmount += row.totalWithVAT || 0;
       }
 
       const caseData = customer.cases.get(caseNumber)!;
@@ -330,27 +335,12 @@ router.post(
         totalWithVAT: row.totalWithVAT,
       });
 
-      // Column K contains the total for the entire case (same value in all rows of the case)
-      // Just set it directly - no need to sum
-      caseData.caseTotalWithVAT = row.totalWithVAT || 0;
-      caseData.caseTotal = row.totalWithVAT || 0;
-
       if (row.expectedArrivalDate) {
         if (!customer.earliestDate || row.expectedArrivalDate < customer.earliestDate) {
           customer.earliestDate = row.expectedArrivalDate;
         }
       }
     });
-
-    // Calculate customer totals by summing up case totals
-    for (const customer of customerMap.values()) {
-      customer.totalWithVAT = 0;
-      customer.totalAmount = 0;
-      for (const caseData of customer.cases.values()) {
-        customer.totalWithVAT += caseData.caseTotalWithVAT;
-        customer.totalAmount += caseData.caseTotal;
-      }
-    }
 
     const uploadedBy = (req as Request & { user?: { name?: string; username?: string } }).user?.name ||
                        (req as Request & { user?: { name?: string; username?: string } }).user?.username || '';
