@@ -319,6 +319,8 @@ router.post(
       }
 
       const caseData = customer.cases.get(caseNumber)!;
+      const isFirstItemInCase = caseData.items.length === 0;
+
       caseData.items.push({
         itemCode: row.itemCode,
         itemDescription: row.itemDescription,
@@ -329,10 +331,16 @@ router.post(
         totalWithVAT: row.totalWithVAT,
       });
 
+      // Sum up row totals for caseTotal
       caseData.caseTotal += row.rowTotal || 0;
-      caseData.caseTotalWithVAT += row.totalWithVAT || 0;
+
+      // Take totalWithVAT from column K only once (first row) - it's the same for all items in the case
+      if (isFirstItemInCase) {
+        caseData.caseTotalWithVAT = row.totalWithVAT || 0;
+        customer.totalWithVAT += row.totalWithVAT || 0;
+      }
+
       customer.totalAmount += row.rowTotal || 0;
-      customer.totalWithVAT += row.totalWithVAT || 0;
 
       if (row.expectedArrivalDate) {
         if (!customer.earliestDate || row.expectedArrivalDate < customer.earliestDate) {
@@ -529,3 +537,9 @@ router.get(
 );
 
 export default router;
+
+
+
+
+
+

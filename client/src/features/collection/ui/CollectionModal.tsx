@@ -25,7 +25,7 @@ export function CollectionModal({
   // Reset amount when modal opens with new case
   useEffect(() => {
     if (isOpen && caseItem) {
-      setAmount(caseItem.caseTotal?.toString() || '');
+      setAmount(caseItem.caseTotalWithVAT?.toString() || '');
       setError('');
     }
   }, [isOpen, caseItem]);
@@ -73,7 +73,7 @@ export function CollectionModal({
             <p className="font-bold text-gray-900 mb-3">#{caseItem.caseNumber}</p>
             <p className="text-sm text-gray-500 mb-1">סכום לגבייה</p>
             <p className="font-bold text-xl text-amber-600">
-              {formatCurrency(caseItem.caseTotal)}
+              {formatCurrency(caseItem.caseTotalWithVAT)}
             </p>
           </div>
 
@@ -101,14 +101,14 @@ export function CollectionModal({
           <div className="flex gap-2 mb-6">
             <button
               type="button"
-              onClick={() => setAmount(caseItem.caseTotal?.toString() || '')}
+              onClick={() => setAmount(caseItem.caseTotalWithVAT?.toString() || '')}
               className="flex-1 py-2 px-3 bg-emerald-50 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-100 transition-colors"
             >
               סכום מלא
             </button>
             <button
               type="button"
-              onClick={() => setAmount((caseItem.caseTotal / 2)?.toFixed(2) || '')}
+              onClick={() => setAmount((caseItem.caseTotalWithVAT / 2)?.toFixed(2) || '')}
               className="flex-1 py-2 px-3 bg-amber-50 text-amber-700 rounded-lg text-sm font-medium hover:bg-amber-100 transition-colors"
             >
               50%
