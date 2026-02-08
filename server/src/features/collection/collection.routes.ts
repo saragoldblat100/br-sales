@@ -50,6 +50,15 @@ function isExcludedCustomer(customerName: string): boolean {
   );
 }
 
+// Helper function to parse number from Excel (handles currency symbols, commas, etc.)
+function parseNumber(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    return Number(value.replace(/[^\d.-]/g, '')) || 0;
+  }
+  return 0;
+}
+
 // Helper function to convert Excel serial date to JS Date
 function excelDateToJSDate(serial: number): Date | null {
   if (!serial || typeof serial !== 'number') return null;
@@ -232,11 +241,11 @@ router.post(
           expectedArrivalDate: expectedDate,
           itemCode: String(row[4] || ''),
           itemDescription: String(row[5] || ''),
-          quantity: Number(row[6]) || 0,
+          quantity: parseNumber(row[6]),
           currency: String(row[7] || 'ILS'),
-          pricePerUnit: Number(row[8]) || 0,
-          rowTotal: Number(row[9]) || 0,
-          totalWithVAT: Number(row[10]) || 0,
+          pricePerUnit: parseNumber(row[8]),
+          rowTotal: parseNumber(row[9]),
+          totalWithVAT: parseNumber(row[10]),
           customerName: String(row[11] || ''),
         };
       })

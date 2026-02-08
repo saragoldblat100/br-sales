@@ -255,7 +255,7 @@ function CustomerList({
             </div>
 
             <div className="flex-shrink-0 text-left">
-              <p className="font-bold text-gray-900">{formatCurrency(customer.totalWithVAT)}</p>
+              <p className="font-bold text-gray-900">{formatCurrency(customer.totalAmount)}</p>
             </div>
 
             <ChevronDown className="h-5 w-5 text-gray-400 rotate-90 " />
@@ -310,7 +310,7 @@ function CustomerDetail({
         <h2 className=" text-2xl font-bold  mb-2">{customer.customerName}</h2>
         <div className="flex items-center gap-6 text-sm ">
           <span>{customer.totalCases} תיקים</span>
-          <span className="font-bold text-lg text-gray-900">{formatCurrency(customer.totalWithVAT)}</span>
+          <span className="font-bold text-lg text-gray-900">{formatCurrency(customer.totalAmount)}</span>
         </div>
       </div>
 
@@ -330,7 +330,7 @@ function CustomerDetail({
                   <span className="font-bold text-gray-900">תיק #{caseItem.caseNumber}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-gray-900">{formatCurrency(caseItem.caseTotalWithVAT)}</span>
+                  <span className="font-bold text-gray-900">{formatCurrency(caseItem.caseTotal)}</span>
                   {isExpanded ? (
                     <ChevronUp className="h-5 w-5 text-gray-400" />
                   ) : (
