@@ -319,7 +319,6 @@ router.post(
       }
 
       const caseData = customer.cases.get(caseNumber)!;
-      const isFirstItemInCase = caseData.items.length === 0;
 
       caseData.items.push({
         itemCode: row.itemCode,
@@ -331,16 +330,10 @@ router.post(
         totalWithVAT: row.totalWithVAT,
       });
 
-      // Sum up row totals for caseTotal
-      caseData.caseTotal += row.rowTotal || 0;
-
-      // Take totalWithVAT from column K only once (first row) - it's the same for all items in the case
-      if (isFirstItemInCase) {
-        caseData.caseTotalWithVAT = row.totalWithVAT || 0;
-        customer.totalWithVAT += row.totalWithVAT || 0;
-      }
-
-      customer.totalAmount += row.rowTotal || 0;
+      // Column K contains the total for the entire case (same value in all rows of the case)
+      // Just set it directly - no need to sum
+      caseData.caseTotalWithVAT = row.totalWithVAT || 0;
+      caseData.caseTotal = row.totalWithVAT || 0;
 
       if (row.expectedArrivalDate) {
         if (!customer.earliestDate || row.expectedArrivalDate < customer.earliestDate) {
@@ -348,6 +341,16 @@ router.post(
         }
       }
     });
+
+    // Calculate customer totals by summing up case totals
+    for (const customer of customerMap.values()) {
+      customer.totalWithVAT = 0;
+      customer.totalAmount = 0;
+      for (const caseData of customer.cases.values()) {
+        customer.totalWithVAT += caseData.caseTotalWithVAT;
+        customer.totalAmount += caseData.caseTotal;
+      }
+    }
 
     const uploadedBy = (req as Request & { user?: { name?: string; username?: string } }).user?.name ||
                        (req as Request & { user?: { name?: string; username?: string } }).user?.username || '';

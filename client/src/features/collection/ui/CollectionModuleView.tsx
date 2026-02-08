@@ -330,7 +330,7 @@ function CustomerDetail({
                   <span className="font-bold text-gray-900">תיק #{caseItem.caseNumber}</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="font-bold text-gray-900">{formatCurrency(caseItem.caseTotalWithVAT)}</span>
+                  <span className="font-bold text-gray-900">{formatCurrency(caseItem.caseTotalWithVAT)} <span className="text-xs text-gray-500 font-normal">כולל מע״מ</span></span>
                   {isExpanded ? (
                     <ChevronUp className="h-5 w-5 text-gray-400" />
                   ) : (
