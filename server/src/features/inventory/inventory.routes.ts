@@ -1,9 +1,14 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
+import multer, { FileFilterCallback } from 'multer';
 import * as XLSX from 'xlsx';
 import { authenticate, authorize } from '@/shared/middleware';
 import { asyncHandler } from '@/shared/utils';
 import { InventoryData } from './inventoryData.model';
+
+// Extend Express Request to include file from multer
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
 
 const router = Router();
 
@@ -11,7 +16,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     const allowedTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',
@@ -71,20 +76,10 @@ router.get(
 router.post(
   '/upload',
   authorize(['logistics', 'manager', 'admin', 'accountant']),
-  (req: Request, res: Response, next) => {
-    upload.single('file')(req, res, (err) => {
-      if (err) {
-        console.error('Multer error:', err);
-        return res.status(400).json({
-          success: false,
-          message: err.message || 'File upload error',
-        });
-      }
-      next();
-    });
-  },
+  upload.single('file'),
   asyncHandler(async (req: Request, res: Response) => {
-    if (!req.file) {
+    const multerReq = req as MulterRequest;
+    if (!multerReq.file) {
       res.status(400).json({
         success: false,
         message: 'No file uploaded',
@@ -102,7 +97,7 @@ router.post(
       }
     }
 
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(multerReq.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const rawData: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });

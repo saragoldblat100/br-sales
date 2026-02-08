@@ -1,10 +1,15 @@
 import { Router, Request, Response } from 'express';
-import multer from 'multer';
+import multer, { FileFilterCallback } from 'multer';
 import * as XLSX from 'xlsx';
 import { authenticate, authorize } from '@/shared/middleware';
 import { asyncHandler } from '@/shared/utils';
 import { CollectionRecord } from './collectionRecord.model';
 import { CollectionData } from './collectionData.model';
+
+// Extend Express Request to include file from multer
+interface MulterRequest extends Request {
+  file?: Express.Multer.File;
+}
 
 const router = Router();
 
@@ -13,7 +18,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
-  fileFilter: (_req, file, cb) => {
+  fileFilter: (_req: Request, file: Express.Multer.File, cb: FileFilterCallback) => {
     const allowedTypes = [
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       'application/vnd.ms-excel',
@@ -171,23 +176,10 @@ router.get(
 router.post(
   '/upload',
   authorize(['manager', 'accountant', 'admin']),
-  (req: Request, res: Response, next) => {
-    console.log('Upload route reached, processing file...');
-    console.log('Content-Type:', req.headers['content-type']);
-    upload.single('file')(req, res, (err) => {
-      if (err) {
-        console.error('Multer error:', err);
-        return res.status(400).json({
-          success: false,
-          message: err.message || 'File upload error',
-        });
-      }
-      console.log('File processed:', req.file ? req.file.originalname : 'NO FILE');
-      next();
-    });
-  },
+  upload.single('file'),
   asyncHandler(async (req: Request, res: Response) => {
-    if (!req.file) {
+    const multerReq = req as MulterRequest;
+    if (!multerReq.file) {
       console.log('No file in request after multer');
       res.status(400).json({
         success: false,
@@ -197,7 +189,7 @@ router.post(
     }
 
     // Read the uploaded Excel file from buffer
-    const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
+    const workbook = XLSX.read(multerReq.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const rawData: unknown[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
