@@ -358,7 +358,7 @@ function CustomerDetail({
                   {caseItem.items.map((item, idx) => (
                     <div key={idx} className="flex items-center justify-between text-sm">
                       <span className="text-gray-700">{item.itemDescription || item.itemCode}</span>
-                      <span className="text-gray-600 font-medium">{formatCurrency(item.totalWithVAT)}</span>
+                      <span className="text-gray-600 font-medium">{formatCurrency(item.rowTotal)}</span>
                     </div>
                   ))}
                 </div>
