@@ -263,7 +263,7 @@ function CustomerList({
         ))}
       </div>
 
-      <div className="flex items-center justify-center gap-6 text-xs text-gray-400 pt-2">
+      <div className="flex items-center justify-center gap-6 text-xs text-gray-400 pt-2 pb-12">
         <div className="flex items-center gap-1.5">
           <div className="w-2 h-2 rounded-full bg-red-500" />
           <span>דחוף</span>
