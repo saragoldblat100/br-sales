@@ -1,39 +1,24 @@
-import { ArrowRight, Wallet } from 'lucide-react';
-import styles from './CollectionModuleView.module.scss';
+import { CollectionModule } from '@/features/collection';
+import { useAuth } from '@/features/auth';
 
 interface CollectionModuleViewProps {
   userName: string;
   onBack: () => void;
+  onLogout: () => void;
 }
 
-export function CollectionModuleView({ userName, onBack }: CollectionModuleViewProps) {
-  return (
-    <div className={styles.page}>
-      <header className={styles.header}>
-        <div className={styles.headerInner}>
-          <div className={styles.headerLeft}>
-            <button onClick={onBack} className={styles.backButton}>
-              <ArrowRight className={styles.backIcon} />
-              <span>חזרה לתפריט</span>
-            </button>
-            <h1 className={styles.title}>גבייה</h1>
-          </div>
-          <div className={styles.userName}>{userName}</div>
-        </div>
-      </header>
+export function CollectionModuleView({ userName, onBack, onLogout }: CollectionModuleViewProps) {
+  const { user } = useAuth();
 
-      <main className={styles.main}>
-        <div className={styles.card}>
-          <div className={styles.iconWrap}>
-            <Wallet className={styles.icon} />
-          </div>
-          <h2 className={styles.cardTitle}>מודול גבייה</h2>
-          <p className={styles.cardSubtitle}>בקרוב...</p>
-          <p className={styles.cardNote}>
-            מודול זה יאפשר ניהול גבייה מלקוחות
-          </p>
-        </div>
-      </main>
-    </div>
+  // Manager and Accountant can upload files
+  const canUpload = user?.role === 'manager' || user?.role === 'accountant' || user?.role === 'admin';
+
+  return (
+    <CollectionModule
+      user={{ name: userName, username: user?.username, role: user?.role }}
+      onBack={onBack}
+      onLogout={onLogout}
+      canUpload={canUpload}
+    />
   );
 }

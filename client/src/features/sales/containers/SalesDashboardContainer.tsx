@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { SalesDashboardView } from '../ui/SalesDashboardView';
 import { CollectionModuleView } from '../ui/CollectionModuleView';
-import { InventoryModuleView } from '../ui/InventoryModuleView';
+import { InventoryModule } from '@/features/inventory';
 import { SalesMainMenuContainer } from './SalesMainMenuContainer';
 import { useSalesDashboard } from '../logic/useSalesDashboard';
 import { CustomerSearch } from '@/features/customers';
@@ -29,6 +29,12 @@ export function SalesDashboardContainer() {
 
   if (!user) return null;
 
+  const canUploadInventory =
+    user.role === 'admin' ||
+    user.role === 'manager' ||
+    user.role === 'accountant' ||
+    user.role === 'logistics';
+
   if (activeModule === null) {
     return (
       <SalesMainMenuContainer
@@ -40,11 +46,18 @@ export function SalesDashboardContainer() {
   }
 
   if (activeModule === 'collection') {
-    return <CollectionModuleView userName={user.name} onBack={handleBackToMenu} />;
+    return <CollectionModuleView userName={user.name} onBack={handleBackToMenu} onLogout={handleLogout} />;
   }
 
   if (activeModule === 'inventory') {
-    return <InventoryModuleView userName={user.name} onBack={handleBackToMenu} />;
+    return (
+      <InventoryModule
+        user={{ name: user.name, username: user.username, role: user.role }}
+        onBack={handleBackToMenu}
+        onLogout={handleLogout}
+        canUpload={canUploadInventory}
+      />
+    );
   }
 
   return (

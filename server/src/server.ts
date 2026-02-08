@@ -2,6 +2,7 @@ import { createApp } from './app';
 import { env } from '@/config/env';
 import { connectDB, disconnectDB } from '@/config/db';
 import { logger } from '@/shared/utils';
+import { updateTodayRate } from '@/features/currency';
 
 /**
  * Start the server
@@ -15,6 +16,20 @@ const startServer = async (): Promise<void> => {
       logger.error('Failed to connect to database. Exiting...');
       process.exit(1);
     }
+
+    // Update USD rate from Bank of Israel on startup
+    setTimeout(async () => {
+      try {
+        const rate = await updateTodayRate();
+        if (rate) {
+          logger.info(`שער דולר להיום: ${rate.usdRateWithMargin} ₪ (כולל מרווח ${rate.marginPercentage}%)`);
+        } else {
+          logger.warn('לא ניתן לעדכן שער דולר - יש להזין שער ידנית');
+        }
+      } catch (error) {
+        logger.error('שגיאה בעדכון שער דולר:', error);
+      }
+    }, 2000);
 
     // Create Express app
     const app = createApp();

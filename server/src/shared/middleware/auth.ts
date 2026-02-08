@@ -46,10 +46,11 @@ export const authenticate = (
     // Verify token
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
 
-    // Attach user to request
+    // Attach user to request (including role from JWT)
     req.user = {
       id: decoded.id,
       username: decoded.username,
+      role: (decoded as { role?: UserRole }).role,
     };
 
     next();
@@ -117,6 +118,7 @@ export const optionalAuth = (
     req.user = {
       id: decoded.id,
       username: decoded.username,
+      role: (decoded as { role?: UserRole }).role,
     };
 
     next();

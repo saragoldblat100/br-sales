@@ -14,8 +14,6 @@ export const authApi = {
     try {
       const response = await api.post('/auth/login', credentials);
 
-      console.log('Login response:', response.data);
-
       const { token, user: userData } = response.data.data;
       setToken(token);
 

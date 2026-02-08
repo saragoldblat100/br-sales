@@ -43,6 +43,7 @@ export const loginResponseSchema = z.object({
 export const jwtPayloadSchema = z.object({
   id: z.string(),
   username: z.string(),
+  role: z.enum(['admin', 'sales', 'sales_agent', 'manager', 'accountant', 'logistics']),
   iat: z.number(),
   exp: z.number(),
 });

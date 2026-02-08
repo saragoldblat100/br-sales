@@ -77,6 +77,7 @@ export const authService = {
     const payload = {
       id: user._id.toString(),
       username: user.username,
+      role: user.role,
     };
 
     return jwt.sign(payload, env.JWT_SECRET, {

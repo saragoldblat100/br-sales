@@ -13,6 +13,8 @@ import { customerRoutes } from '@/features/customers';
 import { currencyRoutes } from '@/features/currency';
 import { itemsRoutes } from '@/features/items';
 import { orderRoutes } from '@/features/orders';
+import { collectionRoutes } from '@/features/collection';
+import { inventoryRoutes } from '@/features/inventory';
 
 /**
  * Create and configure Express application
@@ -121,6 +123,8 @@ export const createApp = (): Application => {
   app.use('/api/currency', currencyRoutes);
   app.use('/api/sales', itemsRoutes); // categories, items/search, items/category, items/recent, items/with-images
   app.use('/api/sales/orders', orderRoutes);
+  app.use('/api/collection', collectionRoutes);
+  app.use('/api/inventory', inventoryRoutes);
 
   // ============================================
   // Error Handling

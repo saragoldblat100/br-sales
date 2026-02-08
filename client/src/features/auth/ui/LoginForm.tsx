@@ -40,7 +40,7 @@ export function LoginForm({
 
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-gray-600 mb-2 text-right">
-          שם המשתמש
+          שם משתמש
         </label>
         <div className="relative">
           <input
@@ -60,7 +60,7 @@ export function LoginForm({
 
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-gray-600 mb-2 text-right">
-          הוכס סיסמה
+          סיסמה
         </label>
         <div className="relative">
           <input
