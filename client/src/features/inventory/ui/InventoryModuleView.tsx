@@ -326,11 +326,11 @@ function InventoryList({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filteredItems.map((item) => {
+            {filteredItems.map((item, idx) => {
               const soldQuantity = item.soldQuantity || 0;
               const isFullySold = soldQuantity >= item.quantity && item.quantity > 0;
               return (
-                <tr key={item.itemCode} className="hover:bg-gray-50">
+                <tr key={`${item.itemCode}-${idx}`} className="hover:bg-gray-50">
                   <td className="px-3 py-2 whitespace-nowrap text-gray-700">{item.itemCode}</td>
                   <td className="px-3 py-2 text-gray-800">{item.itemDescription || item.itemCode}</td>
                   <td className="px-3 py-2 text-gray-600">{item.color || '—'}</td>
