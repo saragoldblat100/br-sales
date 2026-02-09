@@ -149,10 +149,18 @@ export function InventoryModule({ onBack, onLogout, canUpload }: InventoryModule
 
   const handleMarkSold = async (itemCode: string) => {
     const rawValue = soldInputs[itemCode];
-    const soldQuantity = Number(rawValue);
+    let soldQuantity = Number(rawValue);
+
+    // If no quantity entered, use the full item quantity
     if (!soldQuantity || soldQuantity <= 0) {
-      setError('יש להזין כמות תקינה שנמכרה');
-      return;
+      const item = data?.items?.find((i) => i.itemCode === itemCode);
+      if (item) {
+        soldQuantity = item.quantity - (item.soldQuantity || 0);
+      }
+      if (!soldQuantity || soldQuantity <= 0) {
+        setError('יש להזין כמות תקינה שנמכרה');
+        return;
+      }
     }
 
     try {
