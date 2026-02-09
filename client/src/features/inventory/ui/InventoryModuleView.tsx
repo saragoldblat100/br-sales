@@ -79,15 +79,15 @@ function UploadSection({
     <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
       <div className="flex items-center gap-3 mb-4">
         <Upload className="h-6 w-6 text-gray-600" />
-        <div>
+        <div className="flex-grow">
           <h3 className="font-bold text-gray-900">{title}</h3>
           <p className="text-sm text-gray-500">{description}</p>
         </div>
         <button
           onClick={onCancel}
-          className="ml-auto text-sm text-gray-500 hover:text-gray-700"
+          className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors"
         >
-          סגור
+          <X className="h-4 w-4" />
         </button>
       </div>
 
