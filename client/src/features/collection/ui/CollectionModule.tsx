@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { collectionApi } from '../api';
-import type { CollectionCase, CollectionDataResponse, CollectionUploadMode } from '../api';
+import type { CollectionCase, CollectionDataResponse, CollectionStatsResponse, CollectionUploadMode } from '../api';
 import { CollectionModuleView } from './CollectionModuleView';
 
 interface CollectionModuleProps {
@@ -33,6 +33,8 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
   // Filter state
   const [showRecentCollected, setShowRecentCollected] = useState(false);
   const [dateFrom, setDateFrom] = useState<string>('');
+  const [recentCollectedData, setRecentCollectedData] = useState<CollectionStatsResponse | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
 
   // File upload state
   const [file, setFile] = useState<File | null>(null);
@@ -205,15 +207,31 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
     }
   };
 
+  const fetchStats = async () => {
+    setLoadingStats(true);
+    try {
+      const stats = await collectionApi.getStats();
+      setRecentCollectedData(stats);
+    } catch {
+      setError('שגיאה בטעינת נתוני גבייה אחרונים');
+    } finally {
+      setLoadingStats(false);
+    }
+  };
+
   const handleToggleRecentCollected = () => {
-    setShowRecentCollected((prev) => !prev);
-    if (!showRecentCollected) {
-      // When enabling, set default date to 30 days ago
+    const newValue = !showRecentCollected;
+    setShowRecentCollected(newValue);
+    setSelectedCustomer(null);
+    if (newValue) {
+      // When enabling, set default date to 30 days ago and fetch stats
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
       setDateFrom(thirtyDaysAgo.toISOString().split('T')[0]);
+      fetchStats();
     } else {
       setDateFrom('');
+      setRecentCollectedData(null);
     }
   };
 
@@ -240,6 +258,8 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
       markingCase={markingCase}
       showRecentCollected={showRecentCollected}
       dateFrom={dateFrom}
+      recentCollectedData={recentCollectedData}
+      loadingStats={loadingStats}
       onBack={onBack}
       onLogout={onLogout}
       onSelectCustomer={setSelectedCustomer}

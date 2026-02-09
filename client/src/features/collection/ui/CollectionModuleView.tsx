@@ -16,7 +16,7 @@ import {
   X,
   History,
 } from 'lucide-react';
-import type { CollectionCase, CollectionCustomer, CollectionDataResponse, CollectionUploadMode } from '../api';
+import type { CollectionCase, CollectionCustomer, CollectionDataResponse, CollectionStatsResponse, CollectionUploadMode } from '../api';
 import { CollectionModal } from './CollectionModal';
 
 export interface CollectionModuleViewProps {
@@ -40,6 +40,8 @@ export interface CollectionModuleViewProps {
   // Filter state
   showRecentCollected: boolean;
   dateFrom: string;
+  recentCollectedData: CollectionStatsResponse | null;
+  loadingStats: boolean;
 
   // Modal state
   collectionModal: {
@@ -281,6 +283,91 @@ function CustomerList({
   );
 }
 
+// Recent Collected Component
+function RecentCollectedList({
+  data,
+  loading,
+  dateFrom,
+}: {
+  data: CollectionStatsResponse | null;
+  loading: boolean;
+  dateFrom: string;
+}) {
+  if (loading) {
+    return (
+      <div className="min-h-[200px] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 text-blue-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!data || data.records.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+        <History className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+        <h3 className="font-bold text-xl text-gray-900 mb-2">אין גבייה</h3>
+        <p className="text-gray-500">לא נמצאו גביות בתקופה זו</p>
+      </div>
+    );
+  }
+
+  // Filter by date
+  const filteredRecords = dateFrom
+    ? data.records.filter((r) => new Date(r.collectedAt) >= new Date(dateFrom))
+    : data.records;
+
+  // Sort by date (newest first)
+  const sortedRecords = [...filteredRecords].sort(
+    (a, b) => new Date(b.collectedAt).getTime() - new Date(a.collectedAt).getTime()
+  );
+
+  if (sortedRecords.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
+        <History className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+        <h3 className="font-bold text-xl text-gray-900 mb-2">אין גבייה</h3>
+        <p className="text-gray-500">לא נמצאו גביות בתקופה זו</p>
+      </div>
+    );
+  }
+
+  const totalCollected = sortedRecords.reduce((sum, r) => sum + r.collectedAmount, 0);
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-xl p-5">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600">{sortedRecords.length} גביות</span>
+          <span className="font-bold text-lg text-emerald-600">{formatCurrency(totalCollected)}</span>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+        {sortedRecords.map((record, index) => (
+          <div
+            key={`${record.caseNumber}-${record.customerName}`}
+            className={`p-4 flex items-center justify-between ${
+              index !== sortedRecords.length - 1 ? 'border-b border-gray-100' : ''
+            }`}
+          >
+            <div>
+              <p className="font-bold text-gray-900">{record.customerName}</p>
+              <p className="text-sm text-gray-500">תיק #{record.caseNumber}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {new Date(record.collectedAt).toLocaleDateString('he-IL')}
+                {record.collectedBy && ` • ${record.collectedBy}`}
+              </p>
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-emerald-600">{formatCurrency(record.collectedAmount)}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Customer Detail Component
 function CustomerDetail({
   customer,
@@ -422,6 +509,8 @@ export function CollectionModuleView({
   onClearFile,
   onToggleRecentCollected,
   onDateFromChange,
+  recentCollectedData,
+  loadingStats,
 }: CollectionModuleViewProps) {
   const customer = selectedCustomer
     ? customers.find((c) => c.customerName === selectedCustomer)
@@ -552,6 +641,16 @@ export function CollectionModuleView({
             <div className="text-center">
               <Loader2 className="h-12 w-12 text-blue-500 animate-spin mx-auto mb-4" />
               <p className="text-gray-600 font-medium">טוען נתוני גבייה...</p>
+            </div>
+          </div>
+        ) : showRecentCollected ? (
+          <div className="flex justify-center">
+            <div className="w-full max-w-2xl">
+              <RecentCollectedList
+                data={recentCollectedData}
+                loading={loadingStats}
+                dateFrom={dateFrom}
+              />
             </div>
           </div>
         ) : (
