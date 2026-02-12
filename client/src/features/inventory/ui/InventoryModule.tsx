@@ -17,9 +17,11 @@ interface InventoryModuleProps {
   onBack: () => void;
   onLogout: () => void;
   canUpload: boolean;
+  canMarkSold?: boolean;
 }
 
-export function InventoryModule({ onBack, onLogout, canUpload }: InventoryModuleProps) {
+export function InventoryModule({ onBack, onLogout, canUpload, canMarkSold }: InventoryModuleProps) {
+  const effectiveCanMarkSold = canMarkSold ?? canUpload;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<InventoryDataResponse | null>(null);
@@ -208,6 +210,7 @@ export function InventoryModule({ onBack, onLogout, canUpload }: InventoryModule
       error={error}
       data={data}
       canUpload={canUpload}
+      canMarkSold={effectiveCanMarkSold}
       uploadMode={uploadMode}
       file={file}
       uploading={uploading}

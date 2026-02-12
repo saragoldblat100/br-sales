@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/features/auth';
+import { activityApi } from '@/features/activity';
 import { useUpdateCurrencyRate, useGetDraftOrder } from '@/features/orders';
 import type { CustomerWithSpecialPrices, ItemPricing, SalesItem } from '@bravo/shared';
 import type { CartItem } from '@/features/orders';
@@ -60,6 +61,7 @@ export function useSalesDashboard() {
     setSelectedCustomer(customer);
     setCartItems([]);
     setDraftLoaded(false); // Reset so draft can be loaded for new customer
+    activityApi.logView('customer_view', { customerName: customer.customer?.customerName || '' });
   }, []);
 
   const handleAddToCart = useCallback((item: SalesItem, pricing: ItemPricing, cartons: number) => {

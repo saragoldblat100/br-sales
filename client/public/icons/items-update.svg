@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="tag" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+  <!-- Price tag -->
+  <path d="M20 20 L60 20 L80 40 L80 75 Q80 82 73 82 L27 82 Q20 82 20 75 Z" rx="5" fill="url(#tag)"/>
+  <!-- Tag hole -->
+  <circle cx="65" cy="32" r="5" fill="white" opacity="0.7"/>
+  <!-- Barcode lines -->
+  <rect x="30" y="45" width="3" height="22" fill="white" opacity="0.8"/>
+  <rect x="36" y="45" width="5" height="22" fill="white" opacity="0.6"/>
+  <rect x="44" y="45" width="2" height="22" fill="white" opacity="0.8"/>
+  <rect x="49" y="45" width="4" height="22" fill="white" opacity="0.5"/>
+  <rect x="56" y="45" width="3" height="22" fill="white" opacity="0.7"/>
+  <rect x="62" y="45" width="5" height="22" fill="white" opacity="0.6"/>
+  <!-- Shekel sign -->
+  <text x="50" y="80" font-size="10" font-weight="bold" fill="white" text-anchor="middle" opacity="0.5">&#8362;</text>
+</svg>

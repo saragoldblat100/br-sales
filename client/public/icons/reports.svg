@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="doc" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#8b5cf6"/>
+      <stop offset="100%" style="stop-color:#6d28d9"/>
+    </linearGradient>
+    <linearGradient id="lens" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#a78bfa"/>
+      <stop offset="100%" style="stop-color:#7c3aed"/>
+    </linearGradient>
+  </defs>
+  <!-- Document -->
+  <rect x="18" y="12" width="48" height="65" rx="6" fill="url(#doc)"/>
+  <!-- Lines on document -->
+  <line x1="28" y1="28" x2="56" y2="28" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.8"/>
+  <line x1="28" y1="38" x2="50" y2="38" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="28" y1="48" x2="52" y2="48" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.6"/>
+  <line x1="28" y1="58" x2="46" y2="58" stroke="white" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+  <!-- Magnifying glass -->
+  <circle cx="70" cy="65" r="16" fill="none" stroke="url(#lens)" stroke-width="5"/>
+  <line x1="81" y1="76" x2="90" y2="86" stroke="#7c3aed" stroke-width="5" stroke-linecap="round"/>
+  <!-- Eye in magnifying glass -->
+  <ellipse cx="70" cy="65" rx="7" ry="5" fill="white" opacity="0.7"/>
+  <circle cx="70" cy="65" r="3" fill="#6d28d9"/>
+</svg>

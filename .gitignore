@@ -21,6 +21,8 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+NUL
+nul
 
 # Logs
 logs/
@@ -33,3 +35,8 @@ coverage/
 # Misc
 *.tmp
 *.temp
+
+# Binary/data files
+*.xlsx
+*.xls
+*.map

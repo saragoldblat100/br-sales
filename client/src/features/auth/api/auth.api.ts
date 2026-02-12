@@ -23,7 +23,7 @@ export const authApi = {
         username: userData.username,
         name: userData.name,
         email: userData.email,
-        role: userData.role as 'admin' | 'sales' | 'sales_agent' | 'manager' | 'accountant' | 'logistics',
+        role: userData.role as UserProfile['role'],
         isActive: true,
       };
       localStorage.setItem('user', JSON.stringify(user));
@@ -39,19 +39,39 @@ export const authApi = {
    * Logout current user
    */
   async logout(): Promise<void> {
+    try {
+      await api.post('/auth/logout');
+    } catch {
+      // Ignore errors - token may already be expired
+    }
     removeToken();
     localStorage.removeItem('user');
   },
 
   /**
-   * Get current user profile from localStorage
+   * Get current user profile from server
+   * Falls back to localStorage if server is unreachable
    */
   async getProfile(): Promise<UserProfile> {
-    const stored = localStorage.getItem('user');
-    if (stored) {
-      return JSON.parse(stored);
+    try {
+      const response = await api.get('/auth/me');
+      const profile = response.data.data as UserProfile;
+      localStorage.setItem('user', JSON.stringify(profile));
+      return profile;
+    } catch (error: unknown) {
+      // If 401 - token invalid, don't fallback to stale localStorage
+      const status = (error as { response?: { status?: number } })?.response?.status;
+      if (status === 401) {
+        localStorage.removeItem('user');
+        throw new Error('Token expired');
+      }
+      // Network error / server down - fallback to localStorage cache
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        return JSON.parse(stored);
+      }
+      throw new Error('No user profile');
     }
-    throw new Error('No user profile');
   },
 
   /**

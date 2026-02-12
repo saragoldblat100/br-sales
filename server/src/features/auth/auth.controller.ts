@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { authService } from './auth.service';
 import { LoginInput, ChangePasswordInput } from '@bravo/shared';
 import { AuthenticatedRequest } from '@/shared/middleware';
+import { activityService } from '@/features/activity';
 
 /**
  * Authentication Controller
@@ -59,9 +60,12 @@ export const authController = {
    * POST /auth/logout
    * Logout current user (client-side token removal)
    */
-  async logout(_req: Request, res: Response): Promise<void> {
-    // JWT is stateless, so we just return success
-    // Client should remove the token from storage
+  async logout(req: AuthenticatedRequest, res: Response): Promise<void> {
+    // Log logout activity if user is authenticated
+    if (req.user) {
+      activityService.log(req.user.id, req.user.username, 'logout');
+    }
+
     res.json({
       success: true,
       message: 'Logged out successfully',

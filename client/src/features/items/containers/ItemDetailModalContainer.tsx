@@ -1,6 +1,8 @@
+import { useEffect, useRef } from 'react';
 import type { SalesItem, ItemPricing } from '@bravo/shared';
 import { ItemDetailModalView } from '../ui/ItemDetailModalView';
 import { useItemDetailModal } from '../logic/useItemDetailModal';
+import { activityApi } from '@/features/activity';
 
 interface ItemDetailModalContainerProps {
   item: SalesItem;
@@ -15,6 +17,14 @@ export function ItemDetailModalContainer({
   onClose,
   onAddToCart,
 }: ItemDetailModalContainerProps) {
+  const loggedRef = useRef(false);
+  useEffect(() => {
+    if (!loggedRef.current) {
+      loggedRef.current = true;
+      activityApi.logView('item_view', { itemCode: item.itemCode, itemDescription: item.nameHe || item.englishDescription || '' });
+    }
+  }, [item.itemCode]);
+
   const {
     cartons,
     showCurrency,

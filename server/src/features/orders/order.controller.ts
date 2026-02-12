@@ -1,9 +1,11 @@
 import { Request, Response } from 'express';
+import type { AuthenticatedRequest } from '@/shared/middleware';
 import { Order } from './order.model';
 import { OrderLog } from './orderLog.model';
 import { sendOrderEmail } from './email.service';
 import { asyncHandler } from '@/shared/utils';
 import { logger } from '@/shared/utils';
+import { activityService } from '@/features/activity';
 
 /**
  * Create a new order
@@ -40,7 +42,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       totalAmountUSD,
       notes,
       sentAt: new Date(),
-      createdBy: (req as any).user?.id,
+      createdBy: (req as AuthenticatedRequest).user?.id,
     });
 
     await orderLog.save();
@@ -66,6 +68,18 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
 
     // Delete any existing draft for this customer
     await Order.deleteMany({ customerId, status: 'draft' });
+
+    // Log activity
+    const userId = (req as AuthenticatedRequest).user?.id;
+    const username = (req as AuthenticatedRequest).user?.username;
+    if (userId && username) {
+      activityService.log(userId, username, 'order_create', {
+        orderNumber: orderLog.orderNumber,
+        customerName,
+        totalAmountILS,
+        totalAmountUSD,
+      });
+    }
 
     return res.status(201).json({
       success: true,
@@ -94,7 +108,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     totalCBM,
     totalAmountILS,
     totalAmountUSD,
-    createdBy: (req as any).user?.id,
+    createdBy: (req as AuthenticatedRequest).user?.id,
   });
 
   await order.save();

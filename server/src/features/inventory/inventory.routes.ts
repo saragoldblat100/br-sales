@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import * as XLSX from 'xlsx';
-import { authenticate, authorize } from '@/shared/middleware';
+import { authenticate, authorize, AuthenticatedRequest } from '@/shared/middleware';
 import { asyncHandler } from '@/shared/utils';
 import { InventoryData } from './inventoryData.model';
+import { activityService } from '@/features/activity';
 
 // Extend Express Request to include file from multer
 interface MulterRequest extends Request {
@@ -221,7 +222,7 @@ router.post(
  */
 router.patch(
   '/sold',
-  authorize(['logistics', 'manager', 'admin', 'accountant']),
+  authorize(['sales_agent', 'logistics', 'manager', 'admin', 'accountant']),
   asyncHandler(async (req: Request, res: Response) => {
     const { itemCode, soldQuantity } = req.body as { itemCode?: string; soldQuantity?: number };
     const normalizedCode = typeof itemCode === 'string' ? itemCode.trim() : '';
@@ -261,6 +262,15 @@ router.patch(
     }
 
     await inventoryData.save();
+
+    // Log activity
+    const authReq = req as AuthenticatedRequest;
+    if (authReq.user) {
+      activityService.log(authReq.user.id, authReq.user.username, 'inventory_sold', {
+        itemCode: item.itemCode,
+        soldQuantity: quantityToSell,
+      });
+    }
 
     res.json({
       success: true,

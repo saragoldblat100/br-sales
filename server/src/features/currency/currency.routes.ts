@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { authenticate } from '@/shared/middleware';
+import { authenticate, authorize } from '@/shared/middleware';
 import { asyncHandler } from '@/shared/utils';
 import { getTodayRate, updateTodayRate, createManualRate } from './currency.service';
 import { CurrencyRate } from './currency.model';
@@ -41,6 +41,8 @@ router.get(
  */
 router.post(
   '/update',
+  authenticate,
+  authorize(['admin', 'manager']),
   asyncHandler(async (req: Request, res: Response) => {
     const { marginPercentage } = req.body;
 

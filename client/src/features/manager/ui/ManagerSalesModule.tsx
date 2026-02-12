@@ -1,73 +1,37 @@
 import { useState } from 'react';
-import { SalesDashboardView } from '../ui/SalesDashboardView';
-import { CollectionModuleView } from '../ui/CollectionModuleView';
-import { InventoryModule } from '@/features/inventory';
-import { SalesMainMenuContainer } from './SalesMainMenuContainer';
-import { useSalesDashboard } from '../logic/useSalesDashboard';
+import { useAuth } from '@/features/auth';
+import { useSalesDashboard } from '@/features/sales/logic/useSalesDashboard';
+import { SalesDashboardView } from '@/features/sales/ui/SalesDashboardView';
 import { CustomerSearch } from '@/features/customers';
 import { ItemSearch } from '@/features/items';
 import { Cart } from '@/features/orders';
 
-export function SalesDashboardContainer() {
+interface ManagerSalesModuleProps {
+  onBack: () => void;
+}
+
+export function ManagerSalesModule({ onBack }: ManagerSalesModuleProps) {
   const [showCartModal, setShowCartModal] = useState(false);
+  const { user } = useAuth();
 
   const {
-    user,
-    activeModule,
     selectedCustomer,
     cartItems,
-    setActiveModule,
     handleCustomerSelect,
     handleAddToCart,
     handleUpdateQuantity,
     handleRemoveItem,
     handleClearCart,
     handleOrderComplete,
-    handleBackToMenu,
     handleLogout,
   } = useSalesDashboard();
 
   if (!user) return null;
 
-  const canUploadInventory =
-    user.role === 'admin' ||
-    user.role === 'manager' ||
-    user.role === 'accountant' ||
-    user.role === 'logistics';
-
-  const canMarkSold =
-    canUploadInventory || user.role === 'sales_agent';
-
-  if (activeModule === null) {
-    return (
-      <SalesMainMenuContainer
-        user={user}
-        onSelectModule={setActiveModule}
-        onLogout={handleLogout}
-      />
-    );
-  }
-
-  if (activeModule === 'collection') {
-    return <CollectionModuleView userName={user.name} onBack={handleBackToMenu} onLogout={handleLogout} />;
-  }
-
-  if (activeModule === 'inventory') {
-    return (
-      <InventoryModule
-        user={{ name: user.name, username: user.username, role: user.role }}
-        onBack={handleBackToMenu}
-        onLogout={handleLogout}
-        canUpload={canUploadInventory}
-        canMarkSold={canMarkSold}
-      />
-    );
-  }
-
   return (
     <SalesDashboardView
       userName={user.name}
-      onBackToMenu={handleBackToMenu}
+      onBackToMenu={onBack}
       onLogout={handleLogout}
       customerSearch={
         <CustomerSearch
@@ -80,7 +44,7 @@ export function SalesDashboardContainer() {
           <ItemSearch
             customer={selectedCustomer}
             onAddToCart={handleAddToCart}
-            onBackToMenu={handleBackToMenu}
+            onBackToMenu={onBack}
             onChangeCustomer={() => handleCustomerSelect(null as any)}
             onLogout={handleLogout}
             cartItemsCount={cartItems.length}

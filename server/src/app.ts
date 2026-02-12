@@ -15,12 +15,16 @@ import { itemsRoutes } from '@/features/items';
 import { orderRoutes } from '@/features/orders';
 import { collectionRoutes } from '@/features/collection';
 import { inventoryRoutes } from '@/features/inventory';
+import { activityRoutes } from '@/features/activity';
 
 /**
  * Create and configure Express application
  */
 export const createApp = (): Application => {
   const app = express();
+
+  // Trust first proxy (Render) - required for rate limiter to work correctly
+  app.set('trust proxy', 1);
 
   // ============================================
   // Security Middleware
@@ -30,28 +34,19 @@ export const createApp = (): Application => {
   app.use(helmet());
 
   // CORS - Cross-Origin Resource Sharing
+  const allowedOrigins = [
+    env.CLIENT_URL,
+    ...(isDevelopment
+      ? ['http://localhost:5174', 'http://localhost:5173', 'http://localhost:3000']
+      : []),
+  ].filter(Boolean);
+
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, Postman, etc.) in development
+        // Allow requests with no origin (server-to-server) only in development
         if (!origin) {
-          if (isDevelopment) {
-            return callback(null, true);
-          }
-          return callback(null, true); // Allow for server-to-server requests
-        }
-
-        // Check against allowed origins
-        const allowedOrigins = [
-          env.CLIENT_URL,
-          'http://localhost:5174',
-          'http://localhost:5173',
-          'http://localhost:3000',
-        ];
-
-        // Allow Render.com URLs
-        if (origin.endsWith('.onrender.com')) {
-          return callback(null, true);
+          return callback(null, isDevelopment);
         }
 
         if (allowedOrigins.includes(origin)) {
@@ -81,6 +76,22 @@ export const createApp = (): Application => {
   });
 
   app.use('/api', limiter);
+
+  // Strict rate limit on login - 5 attempts per 15 minutes
+  const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: {
+      success: false,
+      error: {
+        code: 'TOO_MANY_LOGIN_ATTEMPTS',
+        message: 'יותר מדי ניסיונות כניסה, נסה שוב בעוד 15 דקות',
+      },
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use('/api/auth/login', loginLimiter);
 
   // ============================================
   // Body Parsing Middleware
@@ -125,6 +136,7 @@ export const createApp = (): Application => {
   app.use('/api/sales/orders', orderRoutes);
   app.use('/api/collection', collectionRoutes);
   app.use('/api/inventory', inventoryRoutes);
+  app.use('/api/activity', activityRoutes);
 
   // ============================================
   // Error Handling

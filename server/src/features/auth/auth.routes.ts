@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authController } from './auth.controller';
-import { authenticate, validateBody } from '@/shared/middleware';
+import { authenticate, optionalAuth, validateBody } from '@/shared/middleware';
 import { asyncHandler } from '@/shared/utils';
 import { loginSchema, changePasswordSchema } from '@bravo/shared';
 
@@ -44,10 +44,11 @@ router.post(
 
 /**
  * POST /api/auth/logout
- * Public - Logout (client-side)
+ * Optional auth - Logout (logs activity if token valid)
  */
 router.post(
   '/logout',
+  optionalAuth,
   asyncHandler(authController.logout)
 );
 

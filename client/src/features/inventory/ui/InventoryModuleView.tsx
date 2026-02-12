@@ -26,6 +26,7 @@ export interface InventoryModuleViewProps {
 
   // Upload state
   canUpload: boolean;
+  canMarkSold?: boolean;
   uploadMode: UploadMode | null;
   file: File | null;
   uploading: boolean;
@@ -262,14 +263,14 @@ function DuplicateResolutionModal({
 // Inventory List Component
 function InventoryList({
   items,
-  canUpload,
+  canMarkSold,
   showRecentSold,
   onMarkSold,
   soldInputs,
   onSoldInputChange,
 }: {
   items: InventoryItem[];
-  canUpload: boolean;
+  canMarkSold: boolean;
   showRecentSold: boolean;
   onMarkSold: (itemCode: string) => void;
   soldInputs: Record<string, string>;
@@ -320,7 +321,7 @@ function InventoryList({
               <th className="px-3 py-2 text-right text-base font-bold">צבע</th>
               <th className="px-3 py-2 text-right text-base font-bold">מחיר לקרטון</th>
               <th className="px-3 py-2 text-right text-base font-bold">כמות</th>
-              {canUpload && (
+              {canMarkSold && (
                 <th className="px-3 py-2 text-right text-base font-bold">סמן נמכר</th>
               )}
             </tr>
@@ -340,7 +341,7 @@ function InventoryList({
                       : '—'}
                   </td>
                   <td className="px-3 py-2 text-gray-800 font-semibold">{item.quantity}</td>
-                  {canUpload && (
+                  {canMarkSold && (
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2">
                         <input
@@ -381,6 +382,7 @@ export function InventoryModuleView({
   error,
   data,
   canUpload,
+  canMarkSold,
   uploadMode,
   file,
   uploading,
@@ -538,7 +540,7 @@ export function InventoryModuleView({
             <div className="w-full">
               <InventoryList
                 items={data?.items || []}
-                canUpload={canUpload}
+                canMarkSold={canMarkSold ?? canUpload}
                 showRecentSold={showRecentSold}
                 onMarkSold={onMarkSold}
                 soldInputs={soldInputs}

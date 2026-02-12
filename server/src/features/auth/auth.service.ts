@@ -4,6 +4,7 @@ import { AppError } from '@/shared/errors';
 import { User, IUser } from './auth.model';
 import { LoginInput, LoginResponse, UserProfile } from '@bravo/shared';
 import { createLogger } from '@/shared/utils';
+import { activityService } from '@/features/activity';
 
 const logger = createLogger('AuthService');
 
@@ -57,6 +58,9 @@ export const authService = {
     const token = this.generateToken(user);
 
     logger.info('Login successful', { username, userId: user._id });
+
+    // Log activity
+    activityService.log(user._id.toString(), user.username, 'login');
 
     return {
       token,

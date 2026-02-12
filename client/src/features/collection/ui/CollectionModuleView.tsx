@@ -586,7 +586,7 @@ export function CollectionModuleView({
               onClick={onToggleRecentCollected}
               className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
                 showRecentCollected
-                  ? 'bg-purple-600 text-white border-purple-600'
+                  ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
               }`}
             >

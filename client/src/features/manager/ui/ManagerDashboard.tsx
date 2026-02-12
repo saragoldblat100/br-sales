@@ -1,45 +1,46 @@
 import { useState } from 'react';
-import { Wallet, Package, FileText, Warehouse, ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/features/auth';
 import { CollectionModule } from '@/features/collection';
 import { InventoryModule } from '@/features/inventory';
+import { ActivityReportModule } from '@/features/activity';
+import { ManagerSalesModule } from './ManagerSalesModule';
 import { ManagerDashboardView, ComingSoonView, type ManagerModuleId, type ManagerModule } from './ManagerDashboardView';
 
 const MODULES: ManagerModule[] = [
   {
+    id: 'sales',
+    title: 'מכירות',
+    description: 'מסכי סוכנת מכירות',
+    iconImage: '/icons/sales-chart.svg',
+    iconBgColor: 'bg-orange-50',
+  },
+  {
     id: 'collection',
-    title: 'מצב גבייה',
+    title: 'גבייה',
     description: 'צפייה והעלאת נתוני גבייה',
-    icon: Wallet,
-    gradient: 'from-amber-500 to-orange-600',
+    iconImage: '/icons/collection.svg',
+    iconBgColor: 'bg-green-50',
   },
   {
     id: 'inventory',
-    title: 'עדכון מלאי',
+    title: 'סחורות בארץ',
     description: 'העלאת קובץ מלאי בארץ',
-    icon: Warehouse,
-    gradient: 'from-emerald-500 to-teal-600',
-  },
-  {
-    id: 'items',
-    title: 'עדכון פריטים',
-    description: 'עדכון מחירים ופרטים',
-    icon: Package,
-    gradient: 'from-blue-500 to-indigo-600',
+    iconImage: '/icons/inventory.svg',
+    iconBgColor: 'bg-blue-50',
   },
   {
     id: 'reports',
     title: 'דוחות סוכנת',
     description: 'דוחות פעילות',
-    icon: FileText,
-    gradient: 'from-purple-500 to-violet-600',
+    iconImage: '/icons/reports.svg',
+    iconBgColor: 'bg-purple-50',
   },
   {
-    id: 'sales',
-    title: 'מכירות',
-    description: 'מסכי סוכנת מכירות',
-    icon: ShoppingCart,
-    gradient: 'from-red-500 to-rose-600',
+    id: 'items',
+    title: 'עדכון פריטים',
+    description: 'עדכון מחירים ופרטים',
+    iconImage: '/icons/items-update.svg',
+    iconBgColor: 'bg-indigo-50',
   },
 ];
 
@@ -72,21 +73,26 @@ export function ManagerDashboard() {
   }
 
   if (activeModule === 'items') {
-    return <ComingSoonView title="עדכון פריטים" icon={Package} onBack={handleBack} />;
+    return <ComingSoonView title="עדכון פריטים" onBack={handleBack} />;
   }
 
   if (activeModule === 'reports') {
-    return <ComingSoonView title="דוחות סוכנת" icon={FileText} onBack={handleBack} />;
+    return <ActivityReportModule onBack={handleBack} />;
   }
 
   if (activeModule === 'sales') {
-    return <ComingSoonView title="מכירות" icon={ShoppingCart} onBack={handleBack} />;
+    return <ManagerSalesModule onBack={handleBack} />;
   }
+
+  // Filter modules by role - 'items' only for admin
+  const visibleModules = MODULES.filter(
+    (m) => m.id !== 'items' || user?.role === 'admin'
+  );
 
   return (
     <ManagerDashboardView
       userName={user?.name || user?.username || ''}
-      modules={MODULES}
+      modules={visibleModules}
       onSelectModule={setActiveModule}
       onLogout={logout}
     />

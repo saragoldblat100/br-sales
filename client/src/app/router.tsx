@@ -7,8 +7,8 @@ import { LoginPage } from '@/pages/LoginPage';
 import { NotFoundPage } from '@/pages/NotFoundPage';
 import { LoadingScreen } from '@/app/ui/LoadingScreen';
 
-// Sales Dashboard
-import { SalesDashboardContainer } from '@/features/sales';
+// Dashboard (routes to Manager or Sales based on role)
+import { DashboardPageContainer } from '@/pages/containers/DashboardPageContainer';
 
 /**
  * Protected Route Component
@@ -50,7 +50,7 @@ export function AppRouter() {
         path="/"
         element={
           <ProtectedRoute>
-            <SalesDashboardContainer />
+            <DashboardPageContainer />
           </ProtectedRoute>
         }
       />

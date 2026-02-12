@@ -1,10 +1,11 @@
 import { Router, Request, Response } from 'express';
 import multer, { FileFilterCallback } from 'multer';
 import * as XLSX from 'xlsx';
-import { authenticate, authorize } from '@/shared/middleware';
+import { authenticate, authorize, AuthenticatedRequest } from '@/shared/middleware';
 import { asyncHandler } from '@/shared/utils';
 import { CollectionRecord } from './collectionRecord.model';
 import { CollectionData } from './collectionData.model';
+import { activityService } from '@/features/activity';
 
 // Extend Express Request to include file from multer
 interface MulterRequest extends Request {
@@ -434,10 +435,11 @@ router.post(
 
 /**
  * POST /api/collection/mark-collected - Mark a case as collected
- * Access: All authenticated users
+ * Access: Sales agents, managers, accountants, admin
  */
 router.post(
   '/mark-collected',
+  authorize(['sales_agent', 'manager', 'accountant', 'admin']),
   asyncHandler(async (req: Request, res: Response) => {
     const { caseNumber, customerName, collectedAmount, collectedBy } = req.body;
 
@@ -461,6 +463,16 @@ router.post(
       { upsert: true, new: true }
     );
 
+    // Log activity
+    const authReq = req as AuthenticatedRequest;
+    if (authReq.user) {
+      activityService.log(authReq.user.id, authReq.user.username, 'collection_mark', {
+        caseNumber,
+        customerName,
+        collectedAmount: collectedAmount || 0,
+      });
+    }
+
     res.json({
       success: true,
       message: 'התיק סומן כנגבה',
@@ -471,10 +483,11 @@ router.post(
 
 /**
  * POST /api/collection/unmark-collected - Unmark a case
- * Access: All authenticated users
+ * Access: Managers, accountants, admin only
  */
 router.post(
   '/unmark-collected',
+  authorize(['manager', 'accountant', 'admin']),
   asyncHandler(async (req: Request, res: Response) => {
     const { caseNumber, customerName } = req.body;
 
