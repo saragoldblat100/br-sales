@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, ChevronUp, Loader2, Eye, Edit2, Trash2 } from 'lucide-react';
+import { ArrowRight, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 import type { OrderItem } from '../api';
 
 interface OrdersModuleViewProps {

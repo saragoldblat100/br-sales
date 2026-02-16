@@ -1,10 +1,11 @@
 import type { UserProfile } from '@bravo/shared';
 import { SalesMainMenuView } from '../ui/SalesMainMenuView';
 import { useSalesMainMenu } from '../logic/useSalesMainMenu';
+import type { SalesModuleId } from '../ui/SalesMainMenuView';
 
 interface SalesMainMenuContainerProps {
   user: UserProfile;
-  onSelectModule: (module: 'sales' | 'collection' | 'inventory') => void;
+  onSelectModule: (module: SalesModuleId) => void;
   onLogout: () => void;
 }
 

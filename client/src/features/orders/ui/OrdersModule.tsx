@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { useGetSentOrders, useGetOrders, useUpdateOrderStatus, OrderItem } from '../api';
+import { useGetSentOrders, useGetOrders, useUpdateOrderStatus } from '../api';
 import { OrdersModuleView } from './OrdersModuleView';
 
 interface OrdersModuleProps {
