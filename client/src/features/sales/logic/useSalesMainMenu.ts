@@ -30,6 +30,13 @@ export function useSalesMainMenu(user: UserProfile) {
       iconImage: '/icons/inventory.svg',
       iconBgColor: 'bg-blue-50',
     },
+    {
+      id: 'orders',
+      title: 'ניהול הזמנות',
+      description: 'צפייה בהזמנות שנשלחו וטיוטות',
+      iconImage: '/icons/orders.svg',
+      iconBgColor: 'bg-rose-50',
+    },
   ];
 
   return {

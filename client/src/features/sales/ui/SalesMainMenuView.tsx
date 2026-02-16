@@ -1,6 +1,6 @@
 import { LogOut } from 'lucide-react';
 
-export type SalesModuleId = 'sales' | 'collection' | 'inventory';
+export type SalesModuleId = 'sales' | 'collection' | 'inventory' | 'orders';
 
 export interface SalesMenuModule {
   id: SalesModuleId;
@@ -52,18 +52,18 @@ export function SalesMainMenuView({
         </div>
 
         {/* Module cards */}
-        <div className="flex justify-center gap-6 mt-12">
+        <div className="flex justify-center gap-6 mt-12 flex-wrap">
           {modules.map((module) => (
             <button
               key={module.id}
               onClick={() => onSelectModule(module.id)}
-              className="bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 min-w-[160px]"
+              className="w-52 h-52 bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 flex flex-col items-center justify-center"
             >
               <div className="flex flex-col items-center gap-4">
                 <div className={`w-24 h-24 rounded-full flex items-center justify-center ${module.iconBgColor}`}>
                   <img src={module.iconImage} alt={module.title} className="w-14 h-14 object-contain" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-800">{module.title}</h2>
+                <h2 className="text-xl font-bold text-gray-800 text-center">{module.title}</h2>
               </div>
             </button>
           ))}

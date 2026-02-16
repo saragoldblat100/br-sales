@@ -4,6 +4,9 @@ import { CollectionModule } from '@/features/collection';
 import { InventoryModule } from '@/features/inventory';
 import { ActivityReportModule } from '@/features/activity';
 import { ManagerSalesModule } from './ManagerSalesModule';
+import { UsersModule } from '@/features/users';
+import { PricingModule } from '@/features/pricing';
+import { OrdersModule } from '@/features/orders';
 import { ManagerDashboardView, ComingSoonView, type ManagerModuleId, type ManagerModule } from './ManagerDashboardView';
 
 const MODULES: ManagerModule[] = [
@@ -41,6 +44,27 @@ const MODULES: ManagerModule[] = [
     description: 'עדכון מחירים ופרטים',
     iconImage: '/icons/items-update.svg',
     iconBgColor: 'bg-indigo-50',
+  },
+  {
+    id: 'pricing',
+    title: 'מחשבון תמחור',
+    description: 'חישוב מחיר עם שרשרת תמחור',
+    iconImage: '/icons/calculator.svg',
+    iconBgColor: 'bg-violet-50',
+  },
+  {
+    id: 'users',
+    title: 'ניהול משתמשים',
+    description: 'יצירה, עריכה והשבתת משתמשים',
+    iconImage: '/icons/users.svg',
+    iconBgColor: 'bg-cyan-50',
+  },
+  {
+    id: 'orders',
+    title: 'ניהול הזמנות',
+    description: 'צפייה בהזמנות שנשלחו וטיוטות',
+    iconImage: '/icons/orders.svg',
+    iconBgColor: 'bg-rose-50',
   },
 ];
 
@@ -84,10 +108,28 @@ export function ManagerDashboard() {
     return <ManagerSalesModule onBack={handleBack} />;
   }
 
-  // Filter modules by role - 'items' only for admin
-  const visibleModules = MODULES.filter(
-    (m) => m.id !== 'items' || user?.role === 'admin'
-  );
+  if (activeModule === 'users') {
+    return <UsersModule onBack={handleBack} />;
+  }
+
+  if (activeModule === 'pricing') {
+    return <PricingModule onBack={handleBack} />;
+  }
+
+  if (activeModule === 'orders') {
+    return <OrdersModule onBack={handleBack} />;
+  }
+
+  // Filter modules by role
+  const visibleModules = MODULES.filter((m) => {
+    // 'items' and 'users' only for admin
+    if (m.id === 'items' || m.id === 'users') return user?.role === 'admin';
+    // 'pricing' for admin and manager
+    if (m.id === 'pricing') return user?.role === 'admin' || user?.role === 'manager';
+    // 'orders' for admin, manager, accountant, sales_agent
+    if (m.id === 'orders') return ['admin', 'manager', 'accountant', 'sales_agent'].includes(user?.role || '');
+    return true;
+  });
 
   return (
     <ManagerDashboardView
