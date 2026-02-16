@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="userFill" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4aa3d9"/>
+      <stop offset="100%" style="stop-color:#2f7fb3"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Head -->
+  <circle cx="50" cy="34" r="14" fill="url(#userFill)"/>
+
+  <!-- Shoulders -->
+  <path d="M24 84 Q24 58 50 58 Q76 58 76 84" fill="url(#userFill)"/>
+</svg>
