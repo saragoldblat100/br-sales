@@ -16,6 +16,7 @@ import { orderRoutes } from '@/features/orders';
 import { collectionRoutes } from '@/features/collection';
 import { inventoryRoutes } from '@/features/inventory';
 import { activityRoutes } from '@/features/activity';
+import { userRoutes } from '@/features/users';
 
 /**
  * Create and configure Express application
@@ -137,6 +138,7 @@ export const createApp = (): Application => {
   app.use('/api/collection', collectionRoutes);
   app.use('/api/inventory', inventoryRoutes);
   app.use('/api/activity', activityRoutes);
+  app.use('/api/admin/users', userRoutes);
 
   // ============================================
   // Error Handling

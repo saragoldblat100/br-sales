@@ -24,7 +24,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     .filter((line: any) => line.currency === 'USD')
     .reduce((sum: number, line: any) => sum + line.totalPrice, 0);
 
-  // If it's a sent order - save only log and send email
+  // If it's a sent order - save in both OrderLog AND Order collection
   if (status === 'order') {
     // Create order log (summary only)
     const orderLog = new OrderLog({
@@ -46,6 +46,22 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     });
 
     await orderLog.save();
+
+    // Also save to Order collection with status='order'
+    const orderInCollection = new Order({
+      customerId,
+      customerCode,
+      customerName,
+      lines,
+      status: 'order',
+      notes,
+      totalCBM,
+      totalAmountILS,
+      totalAmountUSD,
+      createdBy: (req as AuthenticatedRequest).user?.id,
+    });
+
+    await orderInCollection.save();
 
     // Create temporary order object for email (not saved to DB)
     const orderForEmail = {
@@ -94,24 +110,35 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     });
   }
 
-  // For draft/quote - save full order
-  // First, delete any existing draft for this customer
-  await Order.deleteMany({ customerId, status: 'draft' });
+  // For draft/quote - save or update full order
+  let order;
+  const existingDraft = await Order.findOne({ customerId, status: 'draft' });
 
-  const order = new Order({
-    customerId,
-    customerCode,
-    customerName,
-    lines,
-    status: 'draft',
-    notes,
-    totalCBM,
-    totalAmountILS,
-    totalAmountUSD,
-    createdBy: (req as AuthenticatedRequest).user?.id,
-  });
-
-  await order.save();
+  if (existingDraft) {
+    // Update existing draft
+    existingDraft.lines = lines;
+    existingDraft.notes = notes;
+    existingDraft.totalCBM = totalCBM;
+    existingDraft.totalAmountILS = totalAmountILS;
+    existingDraft.totalAmountUSD = totalAmountUSD;
+    await existingDraft.save();
+    order = existingDraft;
+  } else {
+    // Create new draft
+    order = new Order({
+      customerId,
+      customerCode,
+      customerName,
+      lines,
+      status: 'draft',
+      notes,
+      totalCBM,
+      totalAmountILS,
+      totalAmountUSD,
+      createdBy: (req as AuthenticatedRequest).user?.id,
+    });
+    await order.save();
+  }
 
   res.status(201).json({
     success: true,
@@ -131,8 +158,14 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
  */
 export const getDraftOrder = asyncHandler(async (req: Request, res: Response) => {
   const { customerId } = req.params;
+  const userId = (req as AuthenticatedRequest).user?.id;
 
-  const draft = await Order.findOne({ customerId, status: 'draft' });
+  // Only return draft if it belongs to the current user
+  const draft = await Order.findOne({
+    customerId,
+    status: 'draft',
+    createdBy: userId,
+  });
 
   if (!draft) {
     return res.json({
@@ -152,10 +185,25 @@ export const getDraftOrder = asyncHandler(async (req: Request, res: Response) =>
  */
 export const getOrders = asyncHandler(async (req: Request, res: Response) => {
   const { status, customerId, limit = 50, skip = 0 } = req.query;
+  const userId = (req as AuthenticatedRequest).user?.id;
 
   const filter: any = {};
   if (status) filter.status = status;
   if (customerId) filter.customerId = customerId;
+
+  // For draft orders - only show the user's own drafts
+  if (status === 'draft' && userId) {
+    filter.createdBy = userId;
+  }
+
+  // For sent orders - exclude closed/cancelled (show only active sent orders)
+  // Also filter by user who created the order
+  if (status === 'order') {
+    filter.status = { $in: ['order', 'pending', 'approved', 'deposit_received'] };
+    if (userId) {
+      filter.createdBy = userId;
+    }
+  }
 
   const orders = await Order.find(filter)
     .sort({ createdAt: -1 })
@@ -172,6 +220,44 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
       limit: Number(limit),
       skip: Number(skip),
     },
+  });
+});
+
+/**
+ * Update order status
+ */
+export const updateOrderStatus = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  const validStatuses = ['pending', 'approved', 'deposit_received', 'closed', 'cancelled'];
+  if (!validStatuses.includes(status)) {
+    return res.status(400).json({ success: false, message: 'סטטוס לא תקין' });
+  }
+
+  const order = await Order.findByIdAndUpdate(
+    id,
+    { status },
+    { new: true }
+  );
+
+  if (!order) {
+    return res.status(404).json({ success: false, message: 'הזמנה לא נמצאה' });
+  }
+
+  // Log activity
+  const userId = (req as AuthenticatedRequest).user?.id;
+  const username = (req as AuthenticatedRequest).user?.username;
+  if (userId && username) {
+    activityService.log(userId, username, 'order_status_update', {
+      orderNumber: order.orderNumber,
+      newStatus: status,
+    });
+  }
+
+  res.json({
+    success: true,
+    data: order,
   });
 });
 
@@ -193,5 +279,41 @@ export const getOrderById = asyncHandler(async (req: Request, res: Response) => 
   res.json({
     success: true,
     data: order,
+  });
+});
+
+/**
+ * Get sent orders from Order collection
+ * Returns orders that have been sent (status != 'draft' and status != 'quote')
+ */
+export const getSentOrders = asyncHandler(async (req: Request, res: Response) => {
+  const { limit = 50, skip = 0 } = req.query;
+  const userId = (req as AuthenticatedRequest).user?.id;
+
+  const filter: any = {
+    // Only show orders that were sent (have 'order', 'pending', 'approved', or 'deposit_received' status)
+    status: { $in: ['order', 'pending', 'approved', 'deposit_received'] },
+  };
+
+  // Optional: filter by the user who created this order
+  if (userId) {
+    filter.createdBy = userId;
+  }
+
+  const logs = await Order.find(filter)
+    .sort({ createdAt: -1 })
+    .skip(Number(skip))
+    .limit(Number(limit));
+
+  const total = await Order.countDocuments(filter);
+
+  res.json({
+    success: true,
+    data: logs,
+    pagination: {
+      total,
+      limit: Number(limit),
+      skip: Number(skip),
+    },
   });
 });

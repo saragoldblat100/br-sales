@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createOrder, getOrders, getOrderById, getDraftOrder } from './order.controller';
+import { createOrder, getOrders, getOrderById, getDraftOrder, updateOrderStatus, getSentOrders } from './order.controller';
 import { authenticate } from '@/shared/middleware';
 
 const router = Router();
@@ -12,6 +12,12 @@ router.post('/', createOrder);
 
 // Get draft order for customer
 router.get('/draft/:customerId', getDraftOrder);
+
+// Get sent orders from OrderLog
+router.get('/sent', getSentOrders);
+
+// Update order status
+router.patch('/:id/status', updateOrderStatus);
 
 // Get all orders
 router.get('/', getOrders);

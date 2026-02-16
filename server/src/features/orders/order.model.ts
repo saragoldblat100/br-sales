@@ -19,7 +19,7 @@ export interface IOrder extends Document {
   customerCode: string;
   customerName: string;
   lines: IOrderLine[];
-  status: 'draft' | 'quote' | 'order';
+  status: 'draft' | 'quote' | 'order' | 'pending' | 'approved' | 'deposit_received' | 'closed' | 'cancelled';
   notes?: string;
   totalCBM: number;
   totalAmountILS: number;
@@ -54,7 +54,7 @@ const orderSchema = new Schema<IOrder>(
     lines: [orderLineSchema],
     status: {
       type: String,
-      enum: ['draft', 'quote', 'order'],
+      enum: ['draft', 'quote', 'order', 'pending', 'approved', 'deposit_received', 'closed', 'cancelled'],
       default: 'draft',
     },
     notes: { type: String },

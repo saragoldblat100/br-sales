@@ -7,7 +7,11 @@ export type ActivityEventType =
   | 'inventory_sold'
   | 'order_create'
   | 'customer_view'
-  | 'item_view';
+  | 'item_view'
+  | 'user_create'
+  | 'user_update'
+  | 'user_delete'
+  | 'user_password_reset';
 
 export interface IActivityLog extends Document {
   userId: string;
@@ -32,7 +36,7 @@ const activityLogSchema = new Schema<IActivityLog>(
     eventType: {
       type: String,
       required: true,
-      enum: ['login', 'logout', 'collection_mark', 'inventory_sold', 'order_create', 'customer_view', 'item_view'],
+      enum: ['login', 'logout', 'collection_mark', 'inventory_sold', 'order_create', 'customer_view', 'item_view', 'user_create', 'user_update', 'user_delete', 'user_password_reset'],
     },
     eventData: {
       type: Schema.Types.Mixed,
