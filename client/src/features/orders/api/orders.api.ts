@@ -97,9 +97,91 @@ export async function getDraftOrder(customerId: string): Promise<DraftOrderRespo
 }
 
 /**
+ * Order item (for display, from OrderLog or Order)
+ */
+export interface OrderItem {
+  _id: string;
+  orderNumber: string;
+  customerId: string;
+  customerCode: string;
+  customerName: string;
+  lines: OrderLine[];
+  status: 'draft' | 'quote' | 'order' | 'pending' | 'approved' | 'deposit_received' | 'closed' | 'cancelled';
+  notes?: string;
+  totalCBM: number;
+  totalAmountILS: number;
+  totalAmountUSD: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Get orders response
+ */
+export interface GetOrdersResponse {
+  success: boolean;
+  data: OrderItem[];
+  pagination: {
+    total: number;
+    limit: number;
+    skip: number;
+  };
+}
+
+/**
+ * Update order status response
+ */
+export interface UpdateOrderStatusResponse {
+  success: boolean;
+  data: OrderItem;
+}
+
+/**
+ * Get all orders with filters
+ */
+export async function getOrders(
+  status?: string,
+  customerId?: string,
+  limit = 50,
+  skip = 0
+): Promise<GetOrdersResponse> {
+  const params = new URLSearchParams();
+  if (status) params.append('status', status);
+  if (customerId) params.append('customerId', customerId);
+  params.append('limit', limit.toString());
+  params.append('skip', skip.toString());
+
+  const response = await api.get(`/sales/orders?${params}`);
+  return response.data;
+}
+
+/**
+ * Update order status
+ */
+export async function updateOrderStatus(
+  orderId: string,
+  status: string
+): Promise<UpdateOrderStatusResponse> {
+  const response = await api.patch(`/sales/orders/${orderId}/status`, { status });
+  return response.data;
+}
+
+/**
  * Update currency rate
  */
-export async function updateCurrencyRate(): Promise<{ success: boolean; rate: number }> {
+export async function updateCurrencyRate(): Promise<{ success: boolean }> {
   const response = await api.post('/currency/update', {});
+  return response.data;
+}
+
+/**
+ * Get sent orders from OrderLog
+ */
+export async function getSentOrders(limit = 50, skip = 0): Promise<GetOrdersResponse> {
+  const params = new URLSearchParams();
+  params.append('limit', limit.toString());
+  params.append('skip', skip.toString());
+
+  const response = await api.get(`/sales/orders/sent?${params}`);
   return response.data;
 }

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createOrder, getDraftOrder, updateCurrencyRate, type CreateOrderRequest } from './orders.api';
+import { createOrder, getDraftOrder, updateCurrencyRate, getOrders, updateOrderStatus, getSentOrders, type CreateOrderRequest } from './orders.api';
 
 /**
  * Query keys for orders
@@ -42,5 +42,40 @@ export function useGetDraftOrder(customerId: string | null) {
     queryKey: orderKeys.draft(customerId || ''),
     queryFn: () => getDraftOrder(customerId!),
     enabled: !!customerId,
+  });
+}
+
+/**
+ * Hook to get all orders with filters
+ */
+export function useGetOrders(status?: string, customerId?: string) {
+  return useQuery({
+    queryKey: [...orderKeys.list(), { status, customerId }],
+    queryFn: () => getOrders(status, customerId),
+  });
+}
+
+/**
+ * Hook to update order status
+ */
+export function useUpdateOrderStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
+      updateOrderStatus(orderId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.all });
+    },
+  });
+}
+
+/**
+ * Hook to get sent orders from OrderLog
+ */
+export function useGetSentOrders() {
+  return useQuery({
+    queryKey: [...orderKeys.list(), 'sent'],
+    queryFn: () => getSentOrders(),
   });
 }
