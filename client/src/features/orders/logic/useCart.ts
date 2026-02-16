@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { CartItem, OrderLine } from '../api';
 import { useCreateOrder } from '../api';
 
@@ -9,6 +9,7 @@ interface UseCartParams {
   customerName: string;
   onClearCart: () => void;
   onOrderComplete: () => void;
+  initialNotes?: string;
 }
 
 export function useCart({
@@ -18,10 +19,16 @@ export function useCart({
   customerName,
   onClearCart,
   onOrderComplete,
+  initialNotes,
 }: UseCartParams) {
-  const [notes, setNotes] = useState('');
+  const [notes, setNotes] = useState(initialNotes || '');
   const [showSuccess, setShowSuccess] = useState(false);
   const createOrderMutation = useCreateOrder();
+
+  // Sync notes when a new draft is loaded or customer changes
+  useEffect(() => {
+    setNotes(initialNotes || '');
+  }, [initialNotes]);
 
   const totalItems = useMemo(
     () => items.reduce((sum, item) => sum + item.cartons, 0),

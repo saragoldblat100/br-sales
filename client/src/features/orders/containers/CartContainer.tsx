@@ -7,6 +7,7 @@ interface CartContainerProps {
   customerId: string;
   customerCode: string;
   customerName: string;
+  initialNotes?: string;
   onUpdateQuantity: (itemId: string, cartons: number) => void;
   onRemoveItem: (itemId: string) => void;
   onClearCart: () => void;
@@ -18,6 +19,7 @@ export function CartContainer({
   customerId,
   customerCode,
   customerName,
+  initialNotes,
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
@@ -44,6 +46,7 @@ export function CartContainer({
     customerName,
     onClearCart,
     onOrderComplete,
+    initialNotes,
   });
 
   return (

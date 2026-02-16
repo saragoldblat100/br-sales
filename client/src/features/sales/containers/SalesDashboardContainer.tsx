@@ -6,7 +6,7 @@ import { SalesMainMenuContainer } from './SalesMainMenuContainer';
 import { useSalesDashboard } from '../logic/useSalesDashboard';
 import { CustomerSearch } from '@/features/customers';
 import { ItemSearch } from '@/features/items';
-import { Cart } from '@/features/orders';
+import { Cart, OrdersModule } from '@/features/orders';
 
 export function SalesDashboardContainer() {
   const [showCartModal, setShowCartModal] = useState(false);
@@ -16,6 +16,7 @@ export function SalesDashboardContainer() {
     activeModule,
     selectedCustomer,
     cartItems,
+    draftNotes,
     setActiveModule,
     handleCustomerSelect,
     handleAddToCart,
@@ -64,6 +65,10 @@ export function SalesDashboardContainer() {
     );
   }
 
+  if (activeModule === 'orders') {
+    return <OrdersModule onBack={handleBackToMenu} />;
+  }
+
   return (
     <SalesDashboardView
       userName={user.name}
@@ -90,6 +95,7 @@ export function SalesDashboardContainer() {
                 customerId={selectedCustomer?.customer?._id || ''}
                 customerCode={selectedCustomer?.customer?.customerCode || ''}
                 customerName={selectedCustomer?.customer?.customerName || ''}
+                initialNotes={draftNotes}
                 onUpdateQuantity={handleUpdateQuantity}
                 onRemoveItem={handleRemoveItem}
                 onClearCart={handleClearCart}

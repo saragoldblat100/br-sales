@@ -31,7 +31,7 @@ export function ActivityReportView({
     <div className="min-h-screen bg-gradient-to-b from-blue-100 via-blue-50 to-gray-100" dir="rtl">
       {/* Header */}
       <header className="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-40">
-        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/icons/reports.svg" alt="" className="w-10 h-10" />
             <h1 className="text-xl font-bold text-gray-800">דוח פעילות סוכנת</h1>
@@ -46,7 +46,7 @@ export function ActivityReportView({
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6">
+      <main className="max-w-6xl mx-auto px-4 py-6">
         {/* Date Picker Card */}
         <div className="bg-white rounded-3xl shadow-xl p-5 mb-6">
           <label className="block text-sm font-bold text-gray-600 mb-2">בחירת תאריך</label>
@@ -72,7 +72,7 @@ export function ActivityReportView({
         )}
 
         {!loading && !error && report && (
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <CollapsibleCard title="כניסות / יציאות" iconBgColor="bg-blue-50" iconImage="/icons/collection.svg" count={report.sessions.length}>
               {report.sessions.length === 0 ? <EmptyState /> : report.sessions.map((s, i) => <SessionRow key={i} session={s} />)}
             </CollapsibleCard>
@@ -146,8 +146,8 @@ function EmptyState() {
 
 function SessionRow({ session }: { session: ActivitySession }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-sm">
-      <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 text-xs sm:text-sm">
+      <div className="flex items-center gap-2 flex-wrap min-w-0">
         <span className="inline-flex items-center bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium text-xs">
           כניסה {session.loginTime}
         </span>
@@ -165,9 +165,9 @@ function SessionRow({ session }: { session: ActivitySession }) {
 
 function CollectionRow({ item }: { item: ActivityCollection }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-sm">
-      <div>
-        <span className="font-bold text-gray-800">{item.customerName}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 text-xs sm:text-sm">
+      <div className="min-w-0">
+        <span className="font-bold text-gray-800 truncate">{item.customerName}</span>
         <span className="text-gray-300 mx-1.5">|</span>
         <span className="text-gray-500">תיק {item.caseNumber}</span>
       </div>
@@ -181,8 +181,8 @@ function CollectionRow({ item }: { item: ActivityCollection }) {
 
 function InventoryRow({ item }: { item: ActivityInventorySold }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-sm">
-      <span className="font-bold text-gray-800">{item.itemCode}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 text-xs sm:text-sm">
+      <span className="font-bold text-gray-800 truncate">{item.itemCode}</span>
       <div className="flex items-center gap-2">
         <span className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-medium">כמות: {item.soldQuantity}</span>
         <span className="text-gray-400 text-xs">{item.time}</span>
@@ -194,9 +194,9 @@ function InventoryRow({ item }: { item: ActivityInventorySold }) {
 function OrderRow({ item }: { item: ActivityOrder }) {
   const amount = item.totalAmountILS > 0 ? `₪${item.totalAmountILS.toLocaleString()}` : `$${item.totalAmountUSD.toLocaleString()}`;
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-sm">
-      <div>
-        <span className="font-bold text-gray-800">{item.customerName}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 text-xs sm:text-sm">
+      <div className="min-w-0">
+        <span className="font-bold text-gray-800 truncate">{item.customerName}</span>
         <span className="text-gray-300 mx-1.5">|</span>
         <span className="text-gray-500">#{item.orderNumber}</span>
       </div>
@@ -210,8 +210,8 @@ function OrderRow({ item }: { item: ActivityOrder }) {
 
 function CustomerViewRow({ item }: { item: ActivityCustomerView }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-sm">
-      <span className="font-bold text-gray-800">{item.customerName}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 text-xs sm:text-sm">
+      <span className="font-bold text-gray-800 truncate">{item.customerName}</span>
       <span className="text-gray-400 text-xs">{item.time}</span>
     </div>
   );
@@ -219,13 +219,13 @@ function CustomerViewRow({ item }: { item: ActivityCustomerView }) {
 
 function ItemViewRow({ item }: { item: ActivityItemView }) {
   return (
-    <div className="flex items-center justify-between px-5 py-3 text-sm">
-      <div>
-        <span className="font-bold text-gray-800">{item.itemCode}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 text-xs sm:text-sm">
+      <div className="min-w-0">
+        <span className="font-bold text-gray-800 truncate">{item.itemCode}</span>
         {item.itemDescription && (
           <>
             <span className="text-gray-300 mx-1.5">|</span>
-            <span className="text-gray-500">{item.itemDescription}</span>
+            <span className="text-gray-500 truncate">{item.itemDescription}</span>
           </>
         )}
       </div>

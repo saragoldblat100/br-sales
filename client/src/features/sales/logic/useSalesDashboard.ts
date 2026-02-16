@@ -14,6 +14,7 @@ export function useSalesDashboard() {
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithSpecialPrices | null>(null);
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [draftLoaded, setDraftLoaded] = useState(false);
+  const [draftNotes, setDraftNotes] = useState('');
 
   // Fetch draft order when customer is selected
   const { data: draftData } = useGetDraftOrder(selectedCustomer?.customer?._id || null);
@@ -53,6 +54,7 @@ export function useSalesDashboard() {
         boxCBM: line.cbm / line.cartons,
       }));
       setCartItems(loadedItems);
+      setDraftNotes(draft.notes || '');
       setDraftLoaded(true);
     }
   }, [draftData, draftLoaded, selectedCustomer]);
@@ -61,6 +63,7 @@ export function useSalesDashboard() {
     setSelectedCustomer(customer);
     setCartItems([]);
     setDraftLoaded(false); // Reset so draft can be loaded for new customer
+    setDraftNotes('');
     activityApi.logView('customer_view', { customerName: customer.customer?.customerName || '' });
   }, []);
 
@@ -115,17 +118,20 @@ export function useSalesDashboard() {
 
   const handleClearCart = useCallback(() => {
     setCartItems([]);
+    setDraftNotes('');
   }, []);
 
   const handleOrderComplete = useCallback(() => {
     setSelectedCustomer(null);
     setCartItems([]);
+    setDraftNotes('');
   }, []);
 
   const handleBackToMenu = useCallback(() => {
     setActiveModule(null);
     setSelectedCustomer(null);
     setCartItems([]);
+    setDraftNotes('');
   }, []);
 
   const handleLogout = useCallback(async () => {
@@ -137,6 +143,7 @@ export function useSalesDashboard() {
     activeModule,
     selectedCustomer,
     cartItems,
+    draftNotes,
     setActiveModule,
     handleCustomerSelect,
     handleAddToCart,

@@ -17,6 +17,7 @@ export function ManagerSalesModule({ onBack }: ManagerSalesModuleProps) {
   const {
     selectedCustomer,
     cartItems,
+    draftNotes,
     handleCustomerSelect,
     handleAddToCart,
     handleUpdateQuantity,
@@ -54,6 +55,7 @@ export function ManagerSalesModule({ onBack }: ManagerSalesModuleProps) {
                 customerId={selectedCustomer?.customer?._id || ''}
                 customerCode={selectedCustomer?.customer?.customerCode || ''}
                 customerName={selectedCustomer?.customer?.customerName || ''}
+                initialNotes={draftNotes}
                 onUpdateQuantity={handleUpdateQuantity}
                 onRemoveItem={handleRemoveItem}
                 onClearCart={handleClearCart}
