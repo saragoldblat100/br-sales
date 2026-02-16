@@ -6,6 +6,7 @@ export type ActivityEventType =
   | 'collection_mark'
   | 'inventory_sold'
   | 'order_create'
+  | 'order_status_update'
   | 'customer_view'
   | 'item_view'
   | 'user_create'
@@ -36,7 +37,20 @@ const activityLogSchema = new Schema<IActivityLog>(
     eventType: {
       type: String,
       required: true,
-      enum: ['login', 'logout', 'collection_mark', 'inventory_sold', 'order_create', 'customer_view', 'item_view', 'user_create', 'user_update', 'user_delete', 'user_password_reset'],
+      enum: [
+        'login',
+        'logout',
+        'collection_mark',
+        'inventory_sold',
+        'order_create',
+        'order_status_update',
+        'customer_view',
+        'item_view',
+        'user_create',
+        'user_update',
+        'user_delete',
+        'user_password_reset',
+      ],
     },
     eventData: {
       type: Schema.Types.Mixed,
