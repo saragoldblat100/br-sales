@@ -61,31 +61,33 @@ export function OrdersModuleView({
         <span className="font-medium">חזרה</span>
       </button>
 
-      <div className="max-w-6xl mx-auto pt-8">
+      <div className="max-w-4xl mx-auto pt-8">
         {/* Logo */}
         <div className="text-center mb-8">
           <img src="/logoBravo.svg" alt="Bravo Logo" className="h-20 mx-auto mb-4" />
-          <h1 className="text-3xl font-bold text-gray-800">ניהול הזמנות</h1>
+          <h1 className="text-3xl font-bold text-gray-800">היסטוריית הזמנות</h1>
+          <p className="text-gray-500 mt-2">צפייה בהזמנות שנשלחו ובטיוטות</p>
         </div>
 
+        <div className="bg-white rounded-2xl shadow-xl p-6 space-y-6">
         {/* Tabs */}
-        <div className="flex gap-4 mb-8 bg-white rounded-xl shadow-md p-2">
+        <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => onTabChange('sent')}
-            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
+            className={`py-3 px-4 rounded-xl font-bold border-2 transition-all ${
               selectedTab === 'sent'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-red-50 border-red-500 text-red-700'
+                : 'bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600'
             }`}
           >
             הזמנות שנשלחו ({sentOrders.length})
           </button>
           <button
             onClick={() => onTabChange('draft')}
-            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-all ${
+            className={`py-3 px-4 rounded-xl font-bold border-2 transition-all ${
               selectedTab === 'draft'
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-red-50 border-red-500 text-red-700'
+                : 'bg-white border-gray-200 text-gray-600 hover:border-red-300 hover:text-red-600'
             }`}
           >
             טיוטות ({draftOrders.length})
@@ -95,13 +97,13 @@ export function OrdersModuleView({
         {/* Loading */}
         {isLoading && (
           <div className="flex items-center justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+            <Loader2 className="h-8 w-8 animate-spin text-red-500" />
           </div>
         )}
 
         {/* Empty state */}
         {!isLoading && currentOrders.length === 0 && (
-          <div className="text-center py-16 text-gray-400 bg-white rounded-xl shadow-md">
+          <div className="text-center py-12 text-gray-500 border-2 border-gray-200 rounded-xl">
             <p className="text-lg font-medium">אין הזמנות</p>
             <p className="text-sm mt-1">
               {selectedTab === 'sent' ? 'אין הזמנות שנשלחו עדיין' : 'אין טיוטות'}
@@ -111,26 +113,26 @@ export function OrdersModuleView({
 
         {/* Orders list */}
         {!isLoading && currentOrders.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {currentOrders.map((order) => {
               const isExpanded = expandedOrderId === order._id;
               return (
                 <div
                   key={order._id}
-                  className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow"
+                  className="border-2 border-gray-200 rounded-xl overflow-hidden bg-white hover:border-blue-200 transition-colors"
                 >
                   {/* Order header */}
                   <div className="p-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-4 flex-wrap">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                           <div>
                             <span className="text-xs text-gray-500">מספר הזמנה</span>
                             <div className="font-bold text-gray-900">{order.orderNumber}</div>
                           </div>
                           <div>
                             <span className="text-xs text-gray-500">לקוח</span>
-                            <div className="font-bold text-gray-900">{order.customerName}</div>
+                            <div className="font-bold text-gray-900 truncate">{order.customerName}</div>
                           </div>
                           <div>
                             <span className="text-xs text-gray-500">תאריך</span>
@@ -141,7 +143,9 @@ export function OrdersModuleView({
                           <div>
                             <span className="text-xs text-gray-500">סכום</span>
                             <div className="font-bold text-gray-900">
-                              ₪{order.totalAmountILS.toLocaleString('he-IL')}
+                              {order.totalAmountILS > 0
+                                ? `₪${order.totalAmountILS.toLocaleString('he-IL')}`
+                                : `$${order.totalAmountUSD.toLocaleString('he-IL')}`}
                             </div>
                           </div>
                         </div>
@@ -149,7 +153,7 @@ export function OrdersModuleView({
 
                       {/* Status dropdown (only for sent orders) */}
                       {selectedTab === 'sent' && (
-                        <div className="w-48">
+                        <div className="w-full lg:w-48">
                           <select
                             value={order.status}
                             onChange={(e) => onStatusChange(order._id, e.target.value)}
@@ -194,11 +198,11 @@ export function OrdersModuleView({
 
                   {/* Order details (expanded) */}
                   {isExpanded && (
-                    <div className="p-4 bg-gray-50 border-t border-gray-200">
+                    <div className="px-4 pb-4 pt-2 border-t border-gray-100 bg-gray-50">
                       <h4 className="font-bold text-gray-800 mb-3">פריטים בהזמנה:</h4>
                       <div className="space-y-2 mb-4">
                         {order.lines.map((line, idx) => (
-                          <div key={idx} className="flex items-center justify-between text-sm bg-white p-2 rounded-lg">
+                          <div key={idx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm bg-white p-3 rounded-lg border border-gray-100">
                             <div>
                               <span className="font-bold text-gray-900">{line.itemCode}</span>
                               <span className="text-gray-600 mr-2">- {line.description}</span>
@@ -240,7 +244,7 @@ export function OrdersModuleView({
 
                       {/* Notes */}
                       {order.notes && (
-                        <div className="mt-3 p-2 bg-blue-50 rounded-lg text-sm">
+                        <div className="mt-3 p-3 bg-blue-50 rounded-lg text-sm">
                           <span className="text-gray-600">הערות: </span>
                           <span className="text-gray-900">{order.notes}</span>
                         </div>
@@ -253,6 +257,7 @@ export function OrdersModuleView({
             })}
           </div>
         )}
+        </div>
       </div>
 
       {/* Footer */}

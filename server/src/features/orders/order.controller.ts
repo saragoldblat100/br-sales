@@ -186,13 +186,15 @@ export const getDraftOrder = asyncHandler(async (req: Request, res: Response) =>
 export const getOrders = asyncHandler(async (req: Request, res: Response) => {
   const { status, customerId, limit = 50, skip = 0 } = req.query;
   const userId = (req as AuthenticatedRequest).user?.id;
+  const userRole = (req as AuthenticatedRequest).user?.role;
+  const isPrivileged = ['admin', 'manager', 'accountant'].includes(userRole || '');
 
   const filter: any = {};
   if (status) filter.status = status;
   if (customerId) filter.customerId = customerId;
 
-  // For draft orders - only show the user's own drafts
-  if (status === 'draft' && userId) {
+  // For draft orders - only show the user's own drafts (non-privileged roles)
+  if (status === 'draft' && userId && !isPrivileged) {
     filter.createdBy = userId;
   }
 
@@ -200,7 +202,7 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
   // Also filter by user who created the order
   if (status === 'order') {
     filter.status = { $in: ['order', 'pending', 'approved', 'deposit_received'] };
-    if (userId) {
+    if (userId && !isPrivileged) {
       filter.createdBy = userId;
     }
   }
@@ -289,14 +291,16 @@ export const getOrderById = asyncHandler(async (req: Request, res: Response) => 
 export const getSentOrders = asyncHandler(async (req: Request, res: Response) => {
   const { limit = 50, skip = 0 } = req.query;
   const userId = (req as AuthenticatedRequest).user?.id;
+  const userRole = (req as AuthenticatedRequest).user?.role;
+  const isPrivileged = ['admin', 'manager', 'accountant'].includes(userRole || '');
 
   const filter: any = {
     // Only show orders that were sent (have 'order', 'pending', 'approved', or 'deposit_received' status)
     status: { $in: ['order', 'pending', 'approved', 'deposit_received'] },
   };
 
-  // Optional: filter by the user who created this order
-  if (userId) {
+  // Optional: filter by the user who created this order (non-privileged roles)
+  if (userId && !isPrivileged) {
     filter.createdBy = userId;
   }
 
