@@ -23,7 +23,6 @@ export function SalesDashboardContainer() {
     handleUpdateQuantity,
     handleRemoveItem,
     handleClearCart,
-    handleOrderComplete,
     handleBackToMenu,
     handleLogout,
   } = useSalesDashboard();
@@ -86,8 +85,8 @@ export function SalesDashboardContainer() {
             customer={selectedCustomer}
             onAddToCart={handleAddToCart}
             onBackToMenu={handleBackToMenu}
-            onChangeCustomer={() => handleCustomerSelect(null as any)}
             onLogout={handleLogout}
+            userRole={user.role}
             cartItemsCount={cartItems.length}
             cart={
               <Cart
@@ -99,7 +98,6 @@ export function SalesDashboardContainer() {
                 onUpdateQuantity={handleUpdateQuantity}
                 onRemoveItem={handleRemoveItem}
                 onClearCart={handleClearCart}
-                onOrderComplete={handleOrderComplete}
               />
             }
             showCartModal={showCartModal}

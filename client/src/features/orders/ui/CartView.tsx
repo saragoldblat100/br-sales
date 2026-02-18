@@ -1,4 +1,4 @@
-import { ShoppingCart, Trash2, Plus, Minus, Package, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { ShoppingCart, Trash2, Package, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import type { CartItem } from '../api';
 
 interface CartViewProps {
@@ -16,8 +16,9 @@ interface CartViewProps {
   totalAmountUSD: number;
   containerCount: number;
   formatPrice: (amount: number, currency: 'ILS' | 'USD') => string;
-  showSuccess: boolean;
-  isSubmitting: boolean;
+  successMessage?: string | null;
+  isSubmittingQuote: boolean;
+  isSubmittingOrder: boolean;
   errorMessage?: string;
 }
 
@@ -36,8 +37,9 @@ export function CartView({
   totalAmountUSD,
   containerCount,
   formatPrice,
-  showSuccess,
-  isSubmitting,
+  successMessage,
+  isSubmittingQuote,
+  isSubmittingOrder,
   errorMessage,
 }: CartViewProps) {
   if (items.length === 0) {
@@ -46,18 +48,6 @@ export function CartView({
         <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <h3 className="text-lg font-bold text-gray-900 mb-2">הסל ריק</h3>
         <p className="text-gray-500">הוסף פריטים לסל כדי ליצור הזמנה</p>
-      </div>
-    );
-  }
-
-  if (showSuccess) {
-    return (
-      <div className="bg-green-50 rounded-xl shadow-md p-8 text-center">
-        <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <CheckCircle className="w-8 h-8 text-green-600" />
-        </div>
-        <h3 className="text-lg font-bold text-green-800 mb-2">ההזמנה נשלחה בהצלחה!</h3>
-        <p className="text-green-600">מעבר לסל הבחירה...</p>
       </div>
     );
   }
@@ -105,23 +95,22 @@ export function CartView({
               </p>
             </div>
 
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => onUpdateQuantity(item.itemId, Math.max(1, item.cartons - 1))}
-                className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="w-8 text-center font-medium">{item.cartons}</span>
-              <button
-                onClick={() => onUpdateQuantity(item.itemId, item.cartons + 1)}
-                className="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                step={1}
+                value={item.cartons}
+                onChange={(event) => {
+                  const nextValue = Number(event.target.value);
+                  if (!Number.isFinite(nextValue)) return;
+                  onUpdateQuantity(item.itemId, Math.max(1, Math.floor(nextValue)));
+                }}
+                className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center text-sm focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none"
+              />
               <button
                 onClick={() => onRemoveItem(item.itemId)}
-                className="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full transition-colors mr-2"
+                className="w-8 h-8 flex items-center justify-center text-red-500 hover:bg-red-50 rounded-full transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
               </button>
@@ -180,20 +169,35 @@ export function CartView({
           </div>
         )}
 
+        {successMessage && (
+          <div className="flex items-center gap-2 text-green-700 text-sm bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <CheckCircle className="w-4 h-4 text-green-600" />
+            <span>{successMessage}</span>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
             onClick={() => onSubmitOrder('quote')}
-            disabled={isSubmitting}
+            disabled={isSubmittingQuote || isSubmittingOrder}
             className="flex-1 py-3 border-2 border-red-600 text-red-600 font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
           >
-            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'שמור כהצעת מחיר'}
+            {isSubmittingQuote ? (
+              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+            ) : (
+              'שמור כהצעת מחיר'
+            )}
           </button>
           <button
             onClick={() => onSubmitOrder('order')}
-            disabled={isSubmitting}
+            disabled={isSubmittingQuote || isSubmittingOrder}
             className="flex-1 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
           >
-            {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : 'שלח הזמנה'}
+            {isSubmittingOrder ? (
+              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+            ) : (
+              'שלח הזמנה'
+            )}
           </button>
         </div>
       </div>

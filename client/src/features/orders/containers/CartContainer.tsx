@@ -11,7 +11,6 @@ interface CartContainerProps {
   onUpdateQuantity: (itemId: string, cartons: number) => void;
   onRemoveItem: (itemId: string) => void;
   onClearCart: () => void;
-  onOrderComplete: () => void;
 }
 
 export function CartContainer({
@@ -23,13 +22,13 @@ export function CartContainer({
   onUpdateQuantity,
   onRemoveItem,
   onClearCart,
-  onOrderComplete,
 }: CartContainerProps) {
   const {
     notes,
     setNotes,
-    showSuccess,
-    isSubmitting,
+    successMessage,
+    isSubmittingQuote,
+    isSubmittingOrder,
     errorMessage,
     totalItems,
     totalUnits,
@@ -44,8 +43,6 @@ export function CartContainer({
     customerId,
     customerCode,
     customerName,
-    onClearCart,
-    onOrderComplete,
     initialNotes,
   });
 
@@ -65,8 +62,9 @@ export function CartContainer({
       totalAmountUSD={totalAmountUSD}
       containerCount={containerCount}
       formatPrice={formatPrice}
-      showSuccess={showSuccess}
-      isSubmitting={isSubmitting}
+      successMessage={successMessage}
+      isSubmittingQuote={isSubmittingQuote}
+      isSubmittingOrder={isSubmittingOrder}
       errorMessage={errorMessage}
     />
   );

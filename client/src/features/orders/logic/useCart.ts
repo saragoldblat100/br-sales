@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CartItem, OrderLine } from '../api';
 import { useCreateOrder } from '../api';
 
@@ -7,8 +7,6 @@ interface UseCartParams {
   customerId: string;
   customerCode: string;
   customerName: string;
-  onClearCart: () => void;
-  onOrderComplete: () => void;
   initialNotes?: string;
 }
 
@@ -17,18 +15,26 @@ export function useCart({
   customerId,
   customerCode,
   customerName,
-  onClearCart,
-  onOrderComplete,
   initialNotes,
 }: UseCartParams) {
   const [notes, setNotes] = useState(initialNotes || '');
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [submittingType, setSubmittingType] = useState<'quote' | 'order' | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const successTimerRef = useRef<number | null>(null);
   const createOrderMutation = useCreateOrder();
 
   // Sync notes when a new draft is loaded or customer changes
   useEffect(() => {
     setNotes(initialNotes || '');
   }, [initialNotes]);
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) {
+        window.clearTimeout(successTimerRef.current);
+      }
+    };
+  }, []);
 
   const totalItems = useMemo(
     () => items.reduce((sum, item) => sum + item.cartons, 0),
@@ -80,6 +86,7 @@ export function useCart({
     }));
 
     try {
+      setSubmittingType(status === 'quote' ? 'quote' : 'order');
       await createOrderMutation.mutateAsync({
         customerId,
         customerCode,
@@ -89,22 +96,28 @@ export function useCart({
         notes,
       });
 
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        onClearCart();
-        onOrderComplete();
-      }, 2000);
+      if (successTimerRef.current) {
+        window.clearTimeout(successTimerRef.current);
+      }
+      setSuccessMessage(
+        status === 'quote' ? 'ההצעה נשמרה בהצלחה' : 'ההזמנה נשלחה בהצלחה'
+      );
+      successTimerRef.current = window.setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
     } catch {
       // Error handled via mutation state
+    } finally {
+      setSubmittingType(null);
     }
   };
 
   return {
     notes,
     setNotes,
-    showSuccess,
-    isSubmitting: createOrderMutation.isPending,
+    successMessage,
+    isSubmittingQuote: submittingType === 'quote',
+    isSubmittingOrder: submittingType === 'order',
     errorMessage: createOrderMutation.error ? 'שגיאה ביצירת הזמנה' : undefined,
     totalItems,
     totalUnits,
