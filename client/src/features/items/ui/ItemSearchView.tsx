@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import type { ElementType, ReactNode } from 'react';
-import { Search, Package, ArrowRight, RefreshCw, LogOut, ShoppingCart, X } from 'lucide-react';
+import { Search, Package, ArrowRight, LogOut, ShoppingCart, X } from 'lucide-react';
 import type { SalesItem } from '@bravo/shared';
 import { ItemCardView } from './ItemCardView';
+import { activityApi } from '@/features/activity';
 
 export interface SearchModeOption {
   id: 'special' | 'code' | 'category' | 'recent' | 'images';
@@ -18,9 +20,11 @@ interface CategoryOption {
 
 interface ItemSearchViewProps {
   customerName: string;
+  customerCode: string;
   onBackToMenu: () => void;
   onChangeCustomer: () => void;
   onLogout: () => void;
+  userRole?: string;
   searchMode: SearchModeOption['id'];
   searchModes: SearchModeOption[];
   onSelectMode: (mode: SearchModeOption['id']) => void;
@@ -33,6 +37,7 @@ interface ItemSearchViewProps {
   displayedItems: SalesItem[];
   isLoading: boolean;
   emptyStateMessage: string;
+  errorMessage?: string;
   onSelectItem: (item: SalesItem) => void;
   itemDetailModal?: ReactNode;
   cartItemsCount: number;
@@ -44,9 +49,11 @@ interface ItemSearchViewProps {
 
 export function ItemSearchView({
   customerName,
+  customerCode,
   onBackToMenu,
   onChangeCustomer,
   onLogout,
+  userRole,
   searchMode,
   searchModes,
   onSelectMode,
@@ -59,6 +66,7 @@ export function ItemSearchView({
   displayedItems,
   isLoading,
   emptyStateMessage,
+  errorMessage,
   onSelectItem,
   itemDetailModal,
   cartItemsCount,
@@ -67,22 +75,81 @@ export function ItemSearchView({
   onOpenCart,
   onCloseCart,
 }: ItemSearchViewProps) {
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [exitAction, setExitAction] = useState<'home' | 'logout' | null>(null);
+  const [visitSummary, setVisitSummary] = useState('');
+  const [isSavingSummary, setIsSavingSummary] = useState(false);
+  const isSalesAgent = userRole === 'sales_agent';
+
+  const handleExitRequest = () => {
+    setShowExitConfirm(true);
+  };
+
+  const proceedExit = (action: 'home' | 'logout') => {
+    if (action === 'home') {
+      onBackToMenu();
+    } else {
+      onLogout();
+    }
+  };
+
+  const handleExitConfirm = (action: 'home' | 'logout') => {
+    setShowExitConfirm(false);
+    if (isSalesAgent) {
+      setExitAction(action);
+      setShowSummaryModal(true);
+    } else {
+      proceedExit(action);
+    }
+  };
+
+  const handleSkipSummary = () => {
+    setShowSummaryModal(false);
+    if (exitAction) {
+      activityApi.logVisitSummary({
+        customerName,
+        customerCode,
+        summary: '',
+        skipped: true,
+      });
+      proceedExit(exitAction);
+    }
+  };
+
+  const handleSaveSummary = async () => {
+    if (!exitAction) return;
+    setIsSavingSummary(true);
+    try {
+      await activityApi.logVisitSummary({
+        customerName,
+        customerCode,
+        summary: visitSummary.trim(),
+      });
+    } finally {
+      setIsSavingSummary(false);
+      setShowSummaryModal(false);
+      proceedExit(exitAction);
+    }
+  };
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="   p-6 relative">
         {/* כפתור התנתקות - שמאל */}
-        <button
-          onClick={onLogout}
-          className="absolute top-4 left-4 w-14 h-14 bg-red-500 hover:bg-red-600 rounded-xl flex items-center justify-center shadow-lg transition-all"
-          aria-label="התנתק"
-        >
-          <LogOut className="w-7 h-7 text-white" />
-        </button>
+        {searchMode !== 'images' && (
+          <button
+            onClick={onLogout}
+            className="absolute top-4 left-4 w-14 h-14 bg-red-500 hover:bg-red-600 rounded-xl flex items-center justify-center shadow-lg transition-all"
+            aria-label="התנתק"
+          >
+            <LogOut className="w-7 h-7 text-white" />
+          </button>
+        )}
 
         {/* כפתור חזרה לתפריט - ימין */}
         <button
-          onClick={onBackToMenu}
+          onClick={handleExitRequest}
           className="absolute top-4 right-4 flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 rounded-xl text-gray-700 transition-all shadow-lg"
         >
           <ArrowRight className="w-5 h-5" />
@@ -108,13 +175,9 @@ export function ItemSearchView({
               </span>
             </button>
           )}
-          <button
-            onClick={onChangeCustomer}
-            className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all"
-          >
-            <RefreshCw className="w-5 h-5 text-blue-600" />
-            <span className="font-semibold text-gray-800">לקוח : {customerName}</span>
-          </button>
+          <div className="flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-md">
+            <span className="font-semibold text-gray-800">שם לקוח : {customerName}</span>
+          </div>
 
           {/* אייקון עגלה */}
           
@@ -137,6 +200,67 @@ export function ItemSearchView({
             </div>
             <div className="flex-1 overflow-y-auto p-4">
               {cart}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showExitConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 text-center">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">האם אתה מעוניין לצאת מביקור אצל לקוח זה?</h3>
+            <p className="text-sm text-gray-600 mb-6">בחר פעולה</p>
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => handleExitConfirm('home')}
+                className="w-full py-2.5 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
+                חזרה לעמוד הבית
+              </button>
+              <button
+                onClick={() => handleExitConfirm('logout')}
+                className="w-full py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+              >
+                התנתקות
+              </button>
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSummaryModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              לאחר ביקור אצל לקוח עליך לסכם את הפגישה עם לקוח זה
+            </h3>
+            <textarea
+              value={visitSummary}
+              onChange={(event) => setVisitSummary(event.target.value)}
+              placeholder="הזן סיכום פגישה..."
+              className="w-full mt-4 px-3 py-2 border border-gray-300 rounded-lg focus:border-red-500 focus:ring-2 focus:ring-red-200 outline-none resize-none"
+              rows={4}
+            />
+            <div className="flex flex-col gap-3 mt-5">
+              <button
+                onClick={handleSaveSummary}
+                disabled={isSavingSummary}
+                className="w-full py-2.5 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 transition-colors"
+              >
+                שמירה
+              </button>
+              <button
+                onClick={handleSkipSummary}
+                className="w-full py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors"
+              >
+                ללא ביקור אצל לקוח
+              </button>
             </div>
           </div>
         </div>
@@ -203,7 +327,11 @@ export function ItemSearchView({
       )}
 
       <div className="bg-white rounded-xl shadow-md p-4 min-h-[300px]">
-        {isLoading ? (
+        {errorMessage && !isLoading ? (
+          <div className="flex items-center justify-center py-12 text-red-600 text-sm text-center">
+            {errorMessage}
+          </div>
+        ) : isLoading ? (
           <div className="flex justify-center items-center py-12">
             <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin" />
           </div>

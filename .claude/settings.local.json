@@ -14,7 +14,18 @@
       "Bash(git commit:*)",
       "Bash(git branch:*)",
       "Bash(git remote add:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Read(//c/**)",
+      "Bash(npm run build:client:*)",
+      "Bash(node -e:*)",
+      "Bash(tasklist:*)",
+      "Bash(npx vite uild:*)",
+      "Bash(powershelbl:*)",
+      "Bash(netstat:*)",
+      "Bash(timeout:*)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\User\\Desktop\\bravo-sales"
     ]
   }
 }

@@ -29,19 +29,19 @@ export function useItemSearch(customer: CustomerWithSpecialPrices) {
   }, [searchQuery]);
 
   const { data: categoriesData } = useCategories();
-  const { data: searchResults, isLoading: isSearching } = useSearchItems(
+  const { data: searchResults, isLoading: isSearching, error: searchError } = useSearchItems(
     debouncedQuery,
     customerCode
   );
-  const { data: categoryItems, isLoading: isLoadingCategory } = useItemsByCategory(
+  const { data: categoryItems, isLoading: isLoadingCategory, error: categoryError } = useItemsByCategory(
     selectedCategoryId,
     customerCode
   );
-  const { data: recentItems, isLoading: isLoadingRecent } = useRecentItems(
+  const { data: recentItems, isLoading: isLoadingRecent, error: recentError } = useRecentItems(
     customerCode,
     searchMode === 'recent'
   );
-  const { data: imageItems, isLoading: isLoadingImages } = useItemsWithImages(
+  const { data: imageItems, isLoading: isLoadingImages, error: imagesError } = useItemsWithImages(
     customerCode,
     undefined,
     searchMode === 'images'
@@ -116,6 +116,14 @@ export function useItemSearch(customer: CustomerWithSpecialPrices) {
     return 'לא נמצאו פריטים';
   }, [searchMode, debouncedQuery.length, selectedCategoryId]);
 
+  const errorMessage = useMemo(() => {
+    if (searchMode === 'code' && searchError) return 'שגיאה בטעינת תוצאות החיפוש';
+    if (searchMode === 'category' && categoryError) return 'שגיאה בטעינת פריטים בקטגוריה';
+    if (searchMode === 'recent' && recentError) return 'שגיאה בטעינת פריטים שנמכרו לאחרונה';
+    if (searchMode === 'images' && imagesError) return 'שגיאה בטעינת פריטים עם תמונות';
+    return undefined;
+  }, [searchMode, searchError, categoryError, recentError, imagesError]);
+
   return {
     searchMode,
     setSearchMode: (mode: SearchMode) => {
@@ -135,5 +143,6 @@ export function useItemSearch(customer: CustomerWithSpecialPrices) {
     setSelectedItem,
     searchModes,
     showSearchInput: searchMode === 'code',
+    errorMessage,
   };
 }

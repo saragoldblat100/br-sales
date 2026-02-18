@@ -14,7 +14,7 @@ router.use(authenticate);
  */
 router.get(
   '/report',
-  authorize(['manager', 'admin']),
+  authorize(['manager', 'admin', 'accountant']),
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const date = (req.query.date as string) || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 
@@ -36,7 +36,7 @@ router.post(
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { eventType, eventData } = req.body;
 
-    if (!eventType || !['customer_view', 'item_view'].includes(eventType)) {
+    if (!eventType || !['customer_view', 'item_view', 'customer_visit_summary'].includes(eventType)) {
       res.status(400).json({ success: false, message: 'Invalid event type' });
       return;
     }

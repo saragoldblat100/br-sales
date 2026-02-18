@@ -10,6 +10,7 @@ interface ItemSearchContainerProps {
   onBackToMenu: () => void;
   onChangeCustomer: () => void;
   onLogout: () => void;
+  userRole?: string;
   cartItemsCount: number;
   cart: ReactNode;
   showCartModal: boolean;
@@ -23,6 +24,7 @@ export function ItemSearchContainer({
   onBackToMenu,
   onChangeCustomer,
   onLogout,
+  userRole,
   cartItemsCount,
   cart,
   showCartModal,
@@ -40,6 +42,7 @@ export function ItemSearchContainer({
     displayedItems,
     isLoading,
     emptyStateMessage,
+    errorMessage,
     selectedItem,
     setSelectedItem,
     searchModes,
@@ -49,9 +52,11 @@ export function ItemSearchContainer({
   return (
     <ItemSearchView
       customerName={customer.customer.customerName}
+      customerCode={customer.customer.customerCode}
       onBackToMenu={onBackToMenu}
       onChangeCustomer={onChangeCustomer}
       onLogout={onLogout}
+      userRole={userRole}
       searchMode={searchMode}
       searchModes={searchModes}
       onSelectMode={setSearchMode}
@@ -64,6 +69,7 @@ export function ItemSearchContainer({
       displayedItems={displayedItems}
       isLoading={isLoading}
       emptyStateMessage={emptyStateMessage}
+      errorMessage={errorMessage}
       onSelectItem={setSelectedItem}
       itemDetailModal={
         selectedItem ? (

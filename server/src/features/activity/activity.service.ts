@@ -47,6 +47,7 @@ export const activityService = {
     const orders: any[] = [];
     const customerViews: any[] = [];
     const itemViews: any[] = [];
+    const visitSummaries: any[] = [];
 
     for (const log of logs) {
       const time = getIsraelTime(new Date(log.timestamp));
@@ -72,6 +73,9 @@ export const activityService = {
           break;
         case 'item_view':
           itemViews.push({ time, ...log.eventData });
+          break;
+        case 'customer_visit_summary':
+          visitSummaries.push({ time, ...log.eventData });
           break;
       }
     }
@@ -108,6 +112,7 @@ export const activityService = {
       orders,
       customerViews,
       itemViews,
+      visitSummaries,
     };
   },
 };

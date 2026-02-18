@@ -8,6 +8,7 @@ export type ActivityEventType =
   | 'order_create'
   | 'order_status_update'
   | 'customer_view'
+  | 'customer_visit_summary'
   | 'item_view'
   | 'user_create'
   | 'user_update'
@@ -45,6 +46,7 @@ const activityLogSchema = new Schema<IActivityLog>(
         'order_create',
         'order_status_update',
         'customer_view',
+        'customer_visit_summary',
         'item_view',
         'user_create',
         'user_update',

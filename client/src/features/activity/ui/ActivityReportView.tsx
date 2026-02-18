@@ -8,6 +8,7 @@ import type {
   ActivityOrder,
   ActivityCustomerView,
   ActivityItemView,
+  ActivityVisitSummary,
 } from '../api/activity.api';
 
 interface ActivityReportViewProps {
@@ -91,6 +92,10 @@ export function ActivityReportView({
 
             <CollapsibleCard title="כניסה ללקוחות" iconBgColor="bg-indigo-50" iconImage="/icons/sales-chart.svg" count={report.customerViews.length}>
               {report.customerViews.length === 0 ? <EmptyState /> : report.customerViews.map((v, i) => <CustomerViewRow key={i} item={v} />)}
+            </CollapsibleCard>
+
+            <CollapsibleCard title="סיכום פגישה" iconBgColor="bg-emerald-50" iconImage="/icons/sales-chart.svg" count={report.visitSummaries.length}>
+              {report.visitSummaries.length === 0 ? <EmptyState /> : report.visitSummaries.map((v, i) => <VisitSummaryRow key={i} item={v} />)}
             </CollapsibleCard>
 
             <CollapsibleCard title="צפייה בפריטים" iconBgColor="bg-purple-50" iconImage="/icons/items-update.svg" count={report.itemViews.length}>
@@ -213,6 +218,24 @@ function CustomerViewRow({ item }: { item: ActivityCustomerView }) {
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 px-5 py-3 text-xs sm:text-sm">
       <span className="font-bold text-gray-800 truncate">{item.customerName}</span>
       <span className="text-gray-400 text-xs">{item.time}</span>
+    </div>
+  );
+}
+
+function VisitSummaryRow({ item }: { item: ActivityVisitSummary }) {
+  const summaryText = item.skipped ? 'ללא ביקור אצל לקוח' : item.summary;
+  return (
+    <div className="flex flex-col gap-2 px-5 py-3 text-xs sm:text-sm">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-bold text-gray-800 truncate">{item.customerName}</span>
+        <span className="text-gray-300">|</span>
+        <span className="text-gray-500">{item.customerCode}</span>
+        <span className="text-gray-300">|</span>
+        <span className="text-gray-400 text-xs">{item.time}</span>
+      </div>
+      <div className="text-gray-700 bg-emerald-50 border border-emerald-100 rounded-lg px-3 py-2">
+        {summaryText || '—'}
+      </div>
     </div>
   );
 }

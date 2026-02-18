@@ -38,6 +38,14 @@ export interface ActivityItemView {
   itemDescription: string;
 }
 
+export interface ActivityVisitSummary {
+  time: string;
+  customerName: string;
+  customerCode: string;
+  summary: string;
+  skipped?: boolean;
+}
+
 export interface ActivityReport {
   date: string;
   sessions: ActivitySession[];
@@ -46,6 +54,7 @@ export interface ActivityReport {
   orders: ActivityOrder[];
   customerViews: ActivityCustomerView[];
   itemViews: ActivityItemView[];
+  visitSummaries: ActivityVisitSummary[];
 }
 
 export const activityApi = {
@@ -57,6 +66,22 @@ export const activityApi = {
   async logView(eventType: 'customer_view' | 'item_view', eventData: Record<string, any>): Promise<void> {
     try {
       await api.post('/activity/log-view', { eventType, eventData });
+    } catch {
+      // Silently fail - don't block user flow for logging
+    }
+  },
+
+  async logVisitSummary(payload: {
+    customerName: string;
+    customerCode: string;
+    summary: string;
+    skipped?: boolean;
+  }): Promise<void> {
+    try {
+      await api.post('/activity/log-view', {
+        eventType: 'customer_visit_summary',
+        eventData: payload,
+      });
     } catch {
       // Silently fail - don't block user flow for logging
     }
