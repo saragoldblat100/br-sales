@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/features/auth';
 import { activityApi } from '@/features/activity';
 import { useUpdateCurrencyRate, useGetDraftOrder } from '@/features/orders';
@@ -9,6 +9,7 @@ import type { SalesModuleId } from '../ui/SalesMainMenuView';
 export function useSalesDashboard() {
   const { user, logout } = useAuth();
   const updateCurrencyRate = useUpdateCurrencyRate();
+  const hasAttemptedRateUpdateRef = useRef(false);
 
   const [activeModule, setActiveModule] = useState<SalesModuleId | null>(null);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerWithSpecialPrices | null>(null);
@@ -20,21 +21,28 @@ export function useSalesDashboard() {
   const { data: draftData } = useGetDraftOrder(selectedCustomer?.customer?._id || null);
 
   useEffect(() => {
+    if (!user) return;
+    const canUpdateRate = user.role === 'admin' || user.role === 'manager';
+    if (!canUpdateRate) return;
+    if (hasAttemptedRateUpdateRef.current) return;
     const lastUpdate = localStorage.getItem('lastCurrencyUpdate');
     const today = new Date().toDateString();
 
     if (lastUpdate !== today) {
+      hasAttemptedRateUpdateRef.current = true;
+      localStorage.setItem('lastCurrencyUpdate', today);
       updateCurrencyRate.mutate(undefined, {
         onSuccess: () => {
-          localStorage.setItem('lastCurrencyUpdate', today);
+          // already set
         },
         onError: () => {
+          hasAttemptedRateUpdateRef.current = false;
           // Silently ignore currency update errors - not critical
           console.log('Currency update skipped');
         },
       });
     }
-  }, []);
+  }, [updateCurrencyRate, user]);
 
   // Load draft into cart when customer changes
   useEffect(() => {
@@ -121,12 +129,6 @@ export function useSalesDashboard() {
     setDraftNotes('');
   }, []);
 
-  const handleOrderComplete = useCallback(() => {
-    setSelectedCustomer(null);
-    setCartItems([]);
-    setDraftNotes('');
-  }, []);
-
   const handleBackToMenu = useCallback(() => {
     setActiveModule(null);
     setSelectedCustomer(null);
@@ -150,7 +152,6 @@ export function useSalesDashboard() {
     handleUpdateQuantity,
     handleRemoveItem,
     handleClearCart,
-    handleOrderComplete,
     handleBackToMenu,
     handleLogout,
   };
