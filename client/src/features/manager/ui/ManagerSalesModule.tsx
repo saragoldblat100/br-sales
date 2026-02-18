@@ -45,8 +45,8 @@ export function ManagerSalesModule({ onBack }: ManagerSalesModuleProps) {
             customer={selectedCustomer}
             onAddToCart={handleAddToCart}
             onBackToMenu={onBack}
+            onChangeCustomer={() => handleCustomerSelect(null as any)}
             onLogout={handleLogout}
-            userRole={user.role}
             cartItemsCount={cartItems.length}
             cart={
               <Cart
