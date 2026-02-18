@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { isAxiosError } from 'axios';
 import { pricingApi, type PricingCalcResult, type SearchItem } from '../api/pricing.api';
 import { PricingModuleView } from './PricingModuleView';
 
@@ -68,11 +69,26 @@ export function PricingModule({ onBack }: PricingModuleProps) {
       const data = await pricingApi.calculatePrice(itemId, params);
       setResult(data);
     } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        const data = err.response?.data as
+          | { message?: string; missingFields?: string[]; error?: { message?: string } }
+          | undefined;
+
+        if (data?.message) {
+          setCalcError(data.message);
+          if (Array.isArray(data.missingFields)) {
+            setMissingFields(data.missingFields);
+          }
+          return;
+        }
+
+        if (data?.error?.message) {
+          setCalcError(data.error.message);
+          return;
+        }
+      }
+
       const message = err instanceof Error ? err.message : 'שגיאה בחישוב המחיר';
-      try {
-        const parsed = JSON.parse(message);
-        if (parsed.missingFields) { setMissingFields(parsed.missingFields); setCalcError(parsed.message); return; }
-      } catch { /* not JSON */ }
       setCalcError(message);
     } finally {
       setCalcLoading(false);

@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
+import { isAxiosError } from 'axios';
 import type { SalesItem, ItemPricing } from '@bravo/shared';
 import { useCalculatePrice } from '../api';
 
@@ -77,7 +78,28 @@ export function useItemDetailModal({ item, customerCode, onAddToCart, onClose }:
   // Use instant pricing for special prices, server pricing for others
   const pricing = hasSpecialPrice ? instantPricing : calculatePrice.data?.pricing;
   const isLoading = hasSpecialPrice ? false : calculatePrice.isPending;
-  const errorMessage = calculatePrice.error ? 'שגיאה בחישוב מחיר' : undefined;
+  const errorMessage = useMemo(() => {
+    if (!calculatePrice.error) return undefined;
+
+    if (isAxiosError(calculatePrice.error)) {
+      const data = calculatePrice.error.response?.data as
+        | { message?: string; missingFields?: string[]; error?: { message?: string } }
+        | undefined;
+
+      if (data?.message) {
+        if (Array.isArray(data.missingFields) && data.missingFields.length > 0) {
+          return `${data.message} (${data.missingFields.join(', ')})`;
+        }
+        return data.message;
+      }
+
+      if (data?.error?.message) {
+        return data.error.message;
+      }
+    }
+
+    return 'שגיאה בחישוב מחיר';
+  }, [calculatePrice.error]);
 
   const pricePerUnit =
     showCurrency === 'ILS' ? pricing?.sellingPricePerUnitILS : pricing?.sellingPricePerUnitUSD;
