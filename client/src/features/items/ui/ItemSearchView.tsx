@@ -47,34 +47,34 @@ interface ItemSearchViewProps {
   onCloseCart: () => void;
 }
 
-export function ItemSearchView({
-  customerName,
-  customerCode,
-  onBackToMenu,
-  onChangeCustomer,
-  onLogout,
-  userRole,
-  searchMode,
-  searchModes,
-  onSelectMode,
-  searchQuery,
-  onSearchQueryChange,
-  showSearchInput,
-  categories,
-  selectedCategoryId,
-  onSelectCategory,
-  displayedItems,
-  isLoading,
-  emptyStateMessage,
-  errorMessage,
-  onSelectItem,
-  itemDetailModal,
-  cartItemsCount,
-  cart,
-  showCartModal,
-  onOpenCart,
-  onCloseCart,
-}: ItemSearchViewProps) {
+export function ItemSearchView(props: ItemSearchViewProps) {
+  const {
+    customerName,
+    customerCode,
+    onBackToMenu,
+    onLogout,
+    userRole,
+    searchMode,
+    searchModes,
+    onSelectMode,
+    searchQuery,
+    onSearchQueryChange,
+    showSearchInput,
+    categories,
+    selectedCategoryId,
+    onSelectCategory,
+    displayedItems,
+    isLoading,
+    emptyStateMessage,
+    errorMessage,
+    onSelectItem,
+    itemDetailModal,
+    cartItemsCount,
+    cart,
+    showCartModal,
+    onOpenCart,
+    onCloseCart,
+  } = props;
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [exitAction, setExitAction] = useState<'home' | 'logout' | null>(null);
