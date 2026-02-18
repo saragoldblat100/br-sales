@@ -111,7 +111,7 @@ export async function updateTodayRate(marginPercentage = 5): Promise<ICurrencyRa
 /**
  * שליפת שער הדולר הנוכחי (עם מרווח)
  */
-export async function getCurrentRate(): Promise<number | null> {
+export async function getCurrentRate(): Promise<ICurrencyRate | null> {
   let rate = await getTodayRate();
 
   // אם אין שער להיום, נסה לעדכן
@@ -124,7 +124,7 @@ export async function getCurrentRate(): Promise<number | null> {
     rate = await CurrencyRate.findOne({ isActive: true }).sort({ date: -1 });
   }
 
-  return rate ? rate.usdRateWithMargin : null;
+  return rate;
 }
 
 /**

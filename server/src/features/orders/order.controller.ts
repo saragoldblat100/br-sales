@@ -17,7 +17,7 @@ import { activityService } from '@/features/activity';
 export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const { customerId, customerCode, customerName, lines, status, notes } = req.body;
   const userId = (req as AuthenticatedRequest).user?.id;
-  const userName = (req as AuthenticatedRequest).user?.name || (req as AuthenticatedRequest).user?.username;
+  const userName = (req as AuthenticatedRequest).user?.username;
 
   // Calculate totals
   const totalCBM = lines.reduce((sum: number, line: any) => sum + (line.cbm || 0), 0);
