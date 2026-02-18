@@ -61,22 +61,24 @@ export const createApp = (): Application => {
     })
   );
 
-  // Rate Limiting - Prevent abuse
-  const limiter = rateLimit({
-    windowMs: env.RATE_LIMIT_WINDOW_MS,
-    max: env.RATE_LIMIT_MAX_REQUESTS,
-    message: {
-      success: false,
-      error: {
-        code: 'RATE_LIMITED',
-        message: 'Too many requests, please try again later',
+  // Rate Limiting - Prevent abuse (disable in development)
+  if (!isDevelopment) {
+    const limiter = rateLimit({
+      windowMs: env.RATE_LIMIT_WINDOW_MS,
+      max: env.RATE_LIMIT_MAX_REQUESTS,
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many requests, please try again later',
+        },
       },
-    },
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
 
-  app.use('/api', limiter);
+    app.use('/api', limiter);
+  }
 
   // Strict rate limit on login - 5 attempts per 15 minutes
   const loginLimiter = rateLimit({
