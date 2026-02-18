@@ -111,6 +111,8 @@ export interface OrderItem {
   totalCBM: number;
   totalAmountILS: number;
   totalAmountUSD: number;
+  createdBy?: string;
+  createdByName?: string;
   createdAt: string;
   updatedAt: string;
 }

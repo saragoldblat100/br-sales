@@ -25,6 +25,7 @@ export interface IOrder extends Document {
   totalAmountILS: number;
   totalAmountUSD: number;
   createdBy?: string;
+  createdByName?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,22 +63,11 @@ const orderSchema = new Schema<IOrder>(
     totalAmountILS: { type: Number, default: 0 },
     totalAmountUSD: { type: Number, default: 0 },
     createdBy: { type: String },
+    createdByName: { type: String },
   },
   {
     timestamps: true,
   }
 );
-
-// Generate order number before saving
-orderSchema.pre('save', async function (next) {
-  if (!this.orderNumber) {
-    const count = await Order.countDocuments();
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    this.orderNumber = `ORD-${year}${month}-${(count + 1).toString().padStart(4, '0')}`;
-  }
-  next();
-});
 
 export const Order = mongoose.model<IOrder>('Order', orderSchema);

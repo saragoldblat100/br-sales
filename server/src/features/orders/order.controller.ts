@@ -1,7 +1,9 @@
 import { Request, Response } from 'express';
 import type { AuthenticatedRequest } from '@/shared/middleware';
 import { Order } from './order.model';
+import { User } from '@/features/auth/auth.model';
 import { OrderLog } from './orderLog.model';
+import { getNextOrderNumber } from './orderNumber';
 import { sendOrderEmail } from './email.service';
 import { asyncHandler } from '@/shared/utils';
 import { logger } from '@/shared/utils';
@@ -14,6 +16,8 @@ import { activityService } from '@/features/activity';
  */
 export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const { customerId, customerCode, customerName, lines, status, notes } = req.body;
+  const userId = (req as AuthenticatedRequest).user?.id;
+  const userName = (req as AuthenticatedRequest).user?.name || (req as AuthenticatedRequest).user?.username;
 
   // Calculate totals
   const totalCBM = lines.reduce((sum: number, line: any) => sum + (line.cbm || 0), 0);
@@ -26,8 +30,10 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
 
   // If it's a sent order - save in both OrderLog AND Order collection
   if (status === 'order') {
+    const orderNumber = await getNextOrderNumber();
     // Create order log (summary only)
     const orderLog = new OrderLog({
+      orderNumber,
       customerId,
       customerCode,
       customerName,
@@ -42,13 +48,15 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       totalAmountUSD,
       notes,
       sentAt: new Date(),
-      createdBy: (req as AuthenticatedRequest).user?.id,
+      createdBy: userId,
+      createdByName: userName,
     });
 
     await orderLog.save();
 
     // Also save to Order collection with status='order'
     const orderInCollection = new Order({
+      orderNumber,
       customerId,
       customerCode,
       customerName,
@@ -58,14 +66,15 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       totalCBM,
       totalAmountILS,
       totalAmountUSD,
-      createdBy: (req as AuthenticatedRequest).user?.id,
+      createdBy: userId,
+      createdByName: userName,
     });
 
     await orderInCollection.save();
 
     // Create temporary order object for email (not saved to DB)
     const orderForEmail = {
-      orderNumber: orderLog.orderNumber,
+      orderNumber,
       customerId,
       customerCode,
       customerName,
@@ -86,7 +95,6 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     await Order.deleteMany({ customerId, status: 'draft' });
 
     // Log activity
-    const userId = (req as AuthenticatedRequest).user?.id;
     const username = (req as AuthenticatedRequest).user?.username;
     if (userId && username) {
       activityService.log(userId, username, 'order_create', {
@@ -121,11 +129,19 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     existingDraft.totalCBM = totalCBM;
     existingDraft.totalAmountILS = totalAmountILS;
     existingDraft.totalAmountUSD = totalAmountUSD;
+    if (userId) {
+      existingDraft.createdBy = userId;
+    }
+    if (userName) {
+      existingDraft.createdByName = userName;
+    }
     await existingDraft.save();
     order = existingDraft;
   } else {
     // Create new draft
+    const orderNumber = await getNextOrderNumber();
     order = new Order({
+      orderNumber,
       customerId,
       customerCode,
       customerName,
@@ -135,7 +151,8 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       totalCBM,
       totalAmountILS,
       totalAmountUSD,
-      createdBy: (req as AuthenticatedRequest).user?.id,
+      createdBy: userId,
+      createdByName: userName,
     });
     await order.save();
   }
@@ -158,13 +175,9 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
  */
 export const getDraftOrder = asyncHandler(async (req: Request, res: Response) => {
   const { customerId } = req.params;
-  const userId = (req as AuthenticatedRequest).user?.id;
-
-  // Only return draft if it belongs to the current user
   const draft = await Order.findOne({
     customerId,
     status: 'draft',
-    createdBy: userId,
   });
 
   if (!draft) {
@@ -188,6 +201,10 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthenticatedRequest).user?.id;
   const userRole = (req as AuthenticatedRequest).user?.role;
   const isPrivileged = ['admin', 'manager', 'accountant'].includes(userRole || '');
+  const includeManagerOrders = ['sales', 'sales_agent'].includes(userRole || '');
+  const managerIds = includeManagerOrders
+    ? (await User.find({ role: 'manager' }).select('_id').lean()).map((u) => u._id.toString())
+    : [];
 
   const filter: any = {};
   if (status) filter.status = status;
@@ -195,7 +212,9 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
 
   // For draft orders - only show the user's own drafts (non-privileged roles)
   if (status === 'draft' && userId && !isPrivileged) {
-    filter.createdBy = userId;
+    filter.createdBy = includeManagerOrders
+      ? { $in: [userId, ...managerIds] }
+      : userId;
   }
 
   // For sent orders - exclude closed/cancelled (show only active sent orders)
@@ -203,7 +222,9 @@ export const getOrders = asyncHandler(async (req: Request, res: Response) => {
   if (status === 'order') {
     filter.status = { $in: ['order', 'pending', 'approved', 'deposit_received'] };
     if (userId && !isPrivileged) {
-      filter.createdBy = userId;
+      filter.createdBy = includeManagerOrders
+        ? { $in: [userId, ...managerIds] }
+        : userId;
     }
   }
 
@@ -293,6 +314,10 @@ export const getSentOrders = asyncHandler(async (req: Request, res: Response) =>
   const userId = (req as AuthenticatedRequest).user?.id;
   const userRole = (req as AuthenticatedRequest).user?.role;
   const isPrivileged = ['admin', 'manager', 'accountant'].includes(userRole || '');
+  const includeManagerOrders = ['sales', 'sales_agent'].includes(userRole || '');
+  const managerIds = includeManagerOrders
+    ? (await User.find({ role: 'manager' }).select('_id').lean()).map((u) => u._id.toString())
+    : [];
 
   const filter: any = {
     // Only show orders that were sent (have 'order', 'pending', 'approved', or 'deposit_received' status)
@@ -301,7 +326,9 @@ export const getSentOrders = asyncHandler(async (req: Request, res: Response) =>
 
   // Optional: filter by the user who created this order (non-privileged roles)
   if (userId && !isPrivileged) {
-    filter.createdBy = userId;
+    filter.createdBy = includeManagerOrders
+      ? { $in: [userId, ...managerIds] }
+      : userId;
   }
 
   const logs = await Order.find(filter)

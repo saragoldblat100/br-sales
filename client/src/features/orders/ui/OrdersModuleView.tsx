@@ -48,6 +48,13 @@ export function OrdersModuleView({
     draft: 'bg-orange-100 text-orange-800 border-orange-300',
   };
 
+  const formatCreatedBy = (order: OrderItem) => {
+    if (order.createdByName) return order.createdByName;
+    if (!order.createdBy) return 'לא ידוע';
+    const looksLikeId = /^[a-f0-9]{24}$/i.test(order.createdBy);
+    return looksLikeId ? 'לא ידוע' : order.createdBy;
+  };
+
   const currentOrders = selectedTab === 'sent' ? sentOrders : draftOrders;
 
   return (
@@ -123,76 +130,76 @@ export function OrdersModuleView({
                 >
                   {/* Order header */}
                   <div className="p-4 border-b border-gray-200">
-                    <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <span className="text-xs text-gray-500">מספר הזמנה</span>
-                            <div className="font-bold text-gray-900">{order.orderNumber}</div>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-500">לקוח</span>
-                            <div className="font-bold text-gray-900 truncate">{order.customerName}</div>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-500">תאריך</span>
-                            <div className="font-bold text-gray-900">
-                              {new Date(order.createdAt).toLocaleDateString('he-IL')}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-xs text-gray-500">סכום</span>
-                            <div className="font-bold text-gray-900">
-                              {order.totalAmountILS > 0
-                                ? `₪${order.totalAmountILS.toLocaleString('he-IL')}`
-                                : `$${order.totalAmountUSD.toLocaleString('he-IL')}`}
-                            </div>
-                          </div>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex items-start justify-between gap-3">
+                        
+                        <div className="min-w-0 text-right">
+                          <div className="text-xs text-gray-500">לקוח</div>
+                          <div className="font-bold text-gray-900 truncate">{order.customerName}</div>
+                        </div>
+                        <div className="min-w-0 text">
+                          <div className="text-xs text-gray-500">מספר הזמנה</div>
+                          <div className="font-bold text-gray-900">{order.orderNumber}</div>
                         </div>
                       </div>
 
-                      {/* Status dropdown (only for sent orders) */}
-                      {selectedTab === 'sent' && (
-                        <div className="w-full lg:w-48">
-                          <select
-                            value={order.status}
-                            onChange={(e) => onStatusChange(order._id, e.target.value)}
-                            disabled={isUpdating}
-                            className={`w-full px-3 py-2 rounded-lg text-sm font-bold border-2 ${
-                              statusColors[order.status] || 'bg-gray-100 text-gray-800'
-                            } cursor-pointer disabled:opacity-50`}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm items-center">
+                        <div>
+                          <div className="text-xs text-gray-500">תאריך</div>
+                          <div className="font-bold text-gray-900">
+                            {new Date(order.createdAt).toLocaleDateString('he-IL')}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">נוצר ע״י</div>
+                          <div className="font-bold text-gray-900 truncate">{formatCreatedBy(order)}</div>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">סכום</div>
+                          <div className="font-bold text-gray-900">
+                            {order.totalAmountILS > 0
+                              ? `₪${order.totalAmountILS.toLocaleString('he-IL')}`
+                              : `$${order.totalAmountUSD.toLocaleString('he-IL')}`}
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-end gap-2">
+                          {selectedTab === 'sent' ? (
+                            <select
+                              value={order.status}
+                              onChange={(e) => onStatusChange(order._id, e.target.value)}
+                              disabled={isUpdating}
+                              className={`w-32 h-9 px-2 py-1.5 rounded-lg text-xs font-bold border-2 ${
+                                statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                              } cursor-pointer disabled:opacity-50`}
+                            >
+                              {statusOptions.map((status) => (
+                                <option key={status} value={status}>
+                                  {statusLabels[status]}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div
+                              className={`w-32 h-9 px-3 py-1.5 rounded-lg text-xs font-bold border-2 text-center flex items-center justify-center ${
+                                statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                              }`}
+                            >
+                              {statusLabels[order.status]}
+                            </div>
+                          )}
+                          <button
+                            onClick={() => onToggleExpand(order._id)}
+                            className="w-9 h-9 flex items-center justify-center   transition-colors"
+                            aria-label={isExpanded ? 'סגור פרטים' : 'פתח פרטים'}
                           >
-                            {statusOptions.map((status) => (
-                              <option key={status} value={status}>
-                                {statusLabels[status]}
-                              </option>
-                            ))}
-                          </select>
+                            {isExpanded ? (
+                              <ChevronUp className="w-4 h-4 text-gray-600" />
+                            ) : (
+                              <ChevronDown className="w-4 h-4 text-gray-600" />
+                            )}
+                          </button>
                         </div>
-                      )}
-
-                      {/* Status badge (for draft orders) */}
-                      {selectedTab === 'draft' && (
-                        <div
-                          className={`px-4 py-2 rounded-lg text-sm font-bold border-2 ${
-                            statusColors[order.status] || 'bg-gray-100 text-gray-800'
-                          }`}
-                        >
-                          {statusLabels[order.status]}
-                        </div>
-                      )}
-
-                      {/* Expand button */}
-                      <button
-                        onClick={() => onToggleExpand(order._id)}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        {isExpanded ? (
-                          <ChevronUp className="w-5 h-5 text-gray-600" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-600" />
-                        )}
-                      </button>
+                      </div>
                     </div>
                   </div>
 
@@ -267,3 +274,9 @@ export function OrdersModuleView({
     </div>
   );
 }
+
+
+
+
+
+

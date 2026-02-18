@@ -20,6 +20,7 @@ export interface IOrderLog extends Document {
   notes?: string;
   sentAt: Date;
   createdBy?: string;
+  createdByName?: string;
 }
 
 const orderLogSchema = new Schema<IOrderLog>(
@@ -40,22 +41,11 @@ const orderLogSchema = new Schema<IOrderLog>(
     notes: { type: String },
     sentAt: { type: Date, default: Date.now },
     createdBy: { type: String },
+    createdByName: { type: String },
   },
   {
     timestamps: true,
   }
 );
-
-// Generate order number before saving
-orderLogSchema.pre('save', async function (next) {
-  if (!this.orderNumber) {
-    const count = await OrderLog.countDocuments();
-    const date = new Date();
-    const year = date.getFullYear().toString().slice(-2);
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    this.orderNumber = `ORD-${year}${month}-${(count + 1).toString().padStart(4, '0')}`;
-  }
-  next();
-});
 
 export const OrderLog = mongoose.model<IOrderLog>('OrderLog', orderLogSchema);
