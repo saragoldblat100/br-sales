@@ -52,6 +52,7 @@ export function ItemSearchView(props: ItemSearchViewProps) {
     customerName,
     customerCode,
     onBackToMenu,
+    onChangeCustomer,
     onLogout,
     userRole,
     searchMode,
@@ -75,6 +76,7 @@ export function ItemSearchView(props: ItemSearchViewProps) {
     onOpenCart,
     onCloseCart,
   } = props;
+  void onChangeCustomer;
   const [showExitConfirm, setShowExitConfirm] = useState(false);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [exitAction, setExitAction] = useState<'home' | 'logout' | null>(null);
