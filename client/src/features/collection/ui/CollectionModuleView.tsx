@@ -27,6 +27,7 @@ export interface CollectionModuleViewProps {
   customers: CollectionCustomer[];
   selectedCustomer: string | null;
   expandedCases: Record<string, boolean>;
+  userRole?: string;
 
   // Upload state
   canUpload: boolean;
@@ -483,6 +484,7 @@ export function CollectionModuleView({
   customers,
   selectedCustomer,
   expandedCases,
+  userRole,
   canUpload,
   uploadMode,
   file,
@@ -582,19 +584,21 @@ export function CollectionModuleView({
                 </button>
               </>
             )}
-            <button
-              onClick={onToggleRecentCollected}
-              className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
-                showRecentCollected
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-              }`}
-            >
-              <span className="flex items-center gap-2">
-                <History className="h-4 w-4" />
-                גבייה בחודש האחרון
-              </span>
-            </button>
+            {userRole !== 'sales_agent' && (
+              <button
+                onClick={onToggleRecentCollected}
+                className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
+                  showRecentCollected
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  <History className="h-4 w-4" />
+                  גבייה בחודש האחרון
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Upload Section - shows when mode is selected */}
@@ -691,3 +695,4 @@ export function CollectionModuleView({
     </div>
   );
 }
+

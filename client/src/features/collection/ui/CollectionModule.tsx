@@ -247,6 +247,7 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
       customers={sortedCustomers}
       selectedCustomer={selectedCustomer}
       expandedCases={expandedCases}
+      userRole={user?.role}
       canUpload={canUpload}
       uploadMode={uploadMode}
       file={file}
