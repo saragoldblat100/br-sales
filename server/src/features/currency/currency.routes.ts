@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { authenticate, authorize } from '@/shared/middleware';
 import { asyncHandler } from '@/shared/utils';
-import { getTodayRate, updateTodayRate, createManualRate } from './currency.service';
+import { getCurrentRate, updateTodayRate, createManualRate } from './currency.service';
 import { CurrencyRate } from './currency.model';
 
 const router = Router();
@@ -13,7 +13,7 @@ router.get(
   '/current',
   authenticate,
   asyncHandler(async (_req: Request, res: Response) => {
-    const rate = await getTodayRate();
+    const rate = await getCurrentRate();
 
     if (!rate) {
       res.status(404).json({
@@ -22,7 +22,6 @@ router.get(
       });
       return;
     }
-
     res.json({
       success: true,
       rate: {
