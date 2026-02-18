@@ -63,7 +63,7 @@ export const createApp = (): Application => {
 
   // Rate Limiting - Prevent abuse (disable in development)
   if (!isDevelopment) {
-    const limiter = rateLimit({
+    const apiLimiter = rateLimit({
       windowMs: env.RATE_LIMIT_WINDOW_MS,
       max: env.RATE_LIMIT_MAX_REQUESTS,
       message: {
@@ -75,9 +75,42 @@ export const createApp = (): Application => {
       },
       standardHeaders: true,
       legacyHeaders: false,
+      skip: (req) =>
+        req.path === '/activity/log-view' ||
+        req.path === '/sales/items/search',
     });
 
-    app.use('/api', limiter);
+    const activityLimiter = rateLimit({
+      windowMs: env.RATE_LIMIT_ACTIVITY_WINDOW_MS,
+      max: env.RATE_LIMIT_ACTIVITY_MAX_REQUESTS,
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many activity requests, please try again later',
+        },
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+
+    const searchLimiter = rateLimit({
+      windowMs: env.RATE_LIMIT_SEARCH_WINDOW_MS,
+      max: env.RATE_LIMIT_SEARCH_MAX_REQUESTS,
+      message: {
+        success: false,
+        error: {
+          code: 'RATE_LIMITED',
+          message: 'Too many search requests, please try again later',
+        },
+      },
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
+
+    app.use('/api', apiLimiter);
+    app.use('/api/activity/log-view', activityLimiter);
+    app.use('/api/sales/items/search', searchLimiter);
   }
 
   // Strict rate limit on login - 5 attempts per 15 minutes

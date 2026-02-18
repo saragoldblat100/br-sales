@@ -26,7 +26,11 @@ const envSchema = z.object({
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000), // 15 minutes
-  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(100),
+  RATE_LIMIT_MAX_REQUESTS: z.coerce.number().default(1000),
+  RATE_LIMIT_ACTIVITY_WINDOW_MS: z.coerce.number().default(300000), // 5 minutes
+  RATE_LIMIT_ACTIVITY_MAX_REQUESTS: z.coerce.number().default(600),
+  RATE_LIMIT_SEARCH_WINDOW_MS: z.coerce.number().default(60000), // 1 minute
+  RATE_LIMIT_SEARCH_MAX_REQUESTS: z.coerce.number().default(120),
 
   // Email (SMTP)
   SMTP_HOST: z.string().optional(),

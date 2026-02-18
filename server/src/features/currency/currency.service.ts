@@ -121,7 +121,7 @@ export async function getCurrentRate(): Promise<ICurrencyRate | null> {
 
   // אם עדיין אין שער, החזר את השער האחרון
   if (!rate) {
-    rate = await CurrencyRate.findOne({ isActive: true }).sort({ date: -1 });
+    rate = await CurrencyRate.findOne().sort({ date: -1 });
   }
 
   return rate;
