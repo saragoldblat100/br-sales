@@ -215,7 +215,7 @@ router.post(
       return;
     }
 
-    const usdToIls = usdRate;
+    const usdToIls = usdRate.usdRateWithMargin;
 
     // Validate required item fields
     const missingFields: string[] = [];
@@ -471,7 +471,7 @@ router.post(
           res.status(400).json({ error: true, message: 'אין שער דולר זמין במערכת', missingFields: ['שער דולר'] });
           return;
         }
-        usdToIls = systemRate;
+        usdToIls = systemRate.usdRateWithMargin;
         const freshDoc = await getTodayRate();
         if (freshDoc) {
           bankRate = freshDoc.usdRate;
@@ -608,5 +608,3 @@ function buildItemResponse(item: any) {
 }
 
 export default router;
-
-
