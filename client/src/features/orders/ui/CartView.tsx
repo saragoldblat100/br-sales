@@ -1,4 +1,4 @@
-import { ShoppingCart, Trash2, Package, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { ShoppingCart, Trash2, Package, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
 import type { CartItem } from '../api';
 
 interface CartViewProps {
@@ -20,6 +20,9 @@ interface CartViewProps {
   isSubmittingQuote: boolean;
   isSubmittingOrder: boolean;
   errorMessage?: string;
+  showCurrencyModal?: boolean;
+  pendingOrderType?: 'quote' | 'order' | null;
+  onCurrencySelected?: (currency: 'USD' | 'ILS') => void;
 }
 
 export function CartView({
@@ -41,6 +44,9 @@ export function CartView({
   isSubmittingQuote,
   isSubmittingOrder,
   errorMessage,
+  showCurrencyModal = false,
+  pendingOrderType,
+  onCurrencySelected,
 }: CartViewProps) {
   if (items.length === 0) {
     return (
@@ -180,7 +186,7 @@ export function CartView({
           <button
             onClick={() => onSubmitOrder('quote')}
             disabled={isSubmittingQuote || isSubmittingOrder}
-            className="flex-1 py-3 border-2 border-red-600 text-red-600 font-medium rounded-lg hover:bg-red-50 disabled:opacity-50 transition-colors"
+            className="flex-1 py-3 border-2 border-red-600 text-red-600 font-bold rounded-xl hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmittingQuote ? (
               <Loader2 className="w-5 h-5 animate-spin mx-auto" />
@@ -191,7 +197,7 @@ export function CartView({
           <button
             onClick={() => onSubmitOrder('order')}
             disabled={isSubmittingQuote || isSubmittingOrder}
-            className="flex-1 py-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+            className="flex-1 py-3 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isSubmittingOrder ? (
               <Loader2 className="w-5 h-5 animate-spin mx-auto" />
@@ -201,6 +207,64 @@ export function CartView({
           </button>
         </div>
       </div>
+
+      {/* Currency Selection Modal */}
+      {showCurrencyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" dir="rtl">
+          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
+            {/* Close button */}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-900">
+                באיזה מטבע לשלוח את ההזמנה?
+              </h2>
+              <button
+                onClick={() => {
+                  // Close modal without submitting
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-6">
+              בחר את המטבע שבו תשלח את ההזמנה. כל המחירים יהיו במטבע שנבחר בלבד.
+            </p>
+
+            {/* Currency buttons */}
+            <div className="flex gap-3">
+              <button
+                onClick={() => onCurrencySelected?.('USD')}
+                disabled={isSubmittingQuote || isSubmittingOrder}
+                className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {isSubmittingOrder || isSubmittingQuote ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span>$</span>
+                    <span>שלח בדולרים</span>
+                  </>
+                )}
+              </button>
+              <button
+                onClick={() => onCurrencySelected?.('ILS')}
+                disabled={isSubmittingQuote || isSubmittingOrder}
+                className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {isSubmittingOrder || isSubmittingQuote ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <>
+                    <span>₪</span>
+                    <span>שלח בשקלים</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

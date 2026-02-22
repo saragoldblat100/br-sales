@@ -210,6 +210,7 @@ router.post(
       res.status(400).json({
         error: true,
         message: 'אין שער דולר זמין במערכת',
+        missingFields: ['שער דולר'],
         details: 'נדרש להכניס שער דולר ידנית או להמתין לעדכון מבנק ישראל'
       });
       return;
@@ -217,23 +218,35 @@ router.post(
 
     const usdToIls = usdRate.usdRateWithMargin;
 
-    // Validate required item fields
-    const missingFields: string[] = [];
+    // Validate required item fields with explanations
+    const missingFields: { field: string; reason: string }[] = [];
 
     if (!item.supplierPrice || item.supplierPrice === 0) {
-      missingFields.push('מחיר ספק');
+      missingFields.push({
+        field: 'מחיר ספק',
+        reason: 'נדרש כדי לחשב את עלות הבסיס של הפריט'
+      });
     }
 
     if (!item.boxCBM || item.boxCBM === 0) {
-      missingFields.push('נפח קרטון (CBM)');
+      missingFields.push({
+        field: 'נפח קרטון (CBM)',
+        reason: 'נדרש כדי לחשב את עלות הספנה החלה על כל קרטון'
+      });
     }
 
     if (!item.qtyPerCarton || item.qtyPerCarton === 0) {
-      missingFields.push('כמות יחידות בקרטון');
+      missingFields.push({
+        field: 'כמות יחידות בקרטון',
+        reason: 'נדרש כדי להמיר בין מחיר לקרטון למחיר ליחידה'
+      });
     }
 
     if (!item.categoryId) {
-      missingFields.push('קטגוריה');
+      missingFields.push({
+        field: 'קטגוריה',
+        reason: 'נדרשת כדי להחיל את אחוז הרווח המתאים'
+      });
     }
 
     const qtyPerCarton = item.qtyPerCarton || 1;
@@ -297,7 +310,8 @@ router.post(
         message: 'לא ניתן לחשב מחיר - חסרים נתונים',
         missingFields,
         itemCode: item.itemCode,
-        itemName: item.nameHe || item.englishDescription
+        itemName: item.nameHe || item.englishDescription,
+        explanation: 'נדרשים הנתונים הבאים לחישוב המחיר:'
       });
       return;
     }
@@ -485,14 +499,43 @@ router.post(
     const boxCBM = (overrideBoxCBM !== undefined && overrideBoxCBM >= 0) ? overrideBoxCBM : (item.boxCBM || 0);
 
     // Validate required item fields (only if no override provided)
-    const missingFields: string[] = [];
-    if ((!item.supplierPrice || item.supplierPrice === 0) && overrideSupplierPrice === undefined) missingFields.push('מחיר ספק');
-    if (boxCBM === 0) missingFields.push('נפח קרטון (CBM)');
-    if (qtyPerCarton === 0) missingFields.push('כמות יחידות בקרטון');
-    if (!item.categoryId && overrideMargin === undefined) missingFields.push('קטגוריה');
+    const missingFields: { field: string; reason: string }[] = [];
+    if ((!item.supplierPrice || item.supplierPrice === 0) && overrideSupplierPrice === undefined) {
+      missingFields.push({
+        field: 'מחיר ספק',
+        reason: 'נדרש כדי לחשב את עלות הבסיס של הפריט'
+      });
+    }
+    if (boxCBM === 0) {
+      missingFields.push({
+        field: 'נפח קרטון (CBM)',
+        reason: 'נדרש כדי לחשב את עלות הספנה החלה על כל קרטון'
+      });
+    }
+    if (qtyPerCarton === 0) {
+      missingFields.push({
+        field: 'כמות יחידות בקרטון',
+        reason: 'נדרש כדי להמיר בין מחיר לקרטון למחיר ליחידה'
+      });
+    }
+    if (!item.categoryId && overrideMargin === undefined) {
+      missingFields.push({
+        field: 'קטגוריה',
+        reason: 'נדרשת כדי להחיל את אחוז הרווח המתאים'
+      });
+    }
 
     if (missingFields.length > 0) {
-      res.status(400).json({ error: true, message: 'לא ניתן לחשב מחיר - חסרים נתונים', missingFields, item: buildItemResponse(item) });
+      // Extract just the field names for the missing array
+      const missing = missingFields.map(f => f.field);
+      res.status(400).json({
+        error: 'MISSING_PRICING_DATA',
+        message: 'לא ניתן לחשב מחיר - חסרים נתונים',
+        missing,
+        missingFields,
+        item: buildItemResponse(item),
+        explanation: 'נדרשים הנתונים הבאים לחישוב המחיר:'
+      });
       return;
     }
 
@@ -524,7 +567,13 @@ router.post(
     } else {
       const marginRule = await MarginRule.findOne({ categoryId: item.categoryId, isActive: true }).sort({ validFrom: -1 });
       if (!marginRule) {
-        res.status(400).json({ error: true, message: 'לא ניתן לחשב מחיר - חסר אחוז רווח לקטגוריה', missingFields: ['אחוז רווח'], item: buildItemResponse(item) });
+        res.status(400).json({
+          error: 'MISSING_PRICING_DATA',
+          message: 'לא ניתן לחשב מחיר - חסר אחוז רווח לקטגוריה',
+          missing: ['אחוז רווח'],
+          missingFields: [{ field: 'אחוז רווח', reason: 'לא קיים מחיר רווח עבור קטגוריית הפריט' }],
+          item: buildItemResponse(item)
+        });
         return;
       }
       marginPercentage = marginRule.marginPercentage;
@@ -581,6 +630,22 @@ router.post(
     });
   })
 );
+
+/**
+ * Helper to translate field names to Hebrew for display
+ */
+function translateFieldName(fieldEn: string): string {
+  const translations: { [key: string]: string } = {
+    'supplierPrice': 'מחיר ספק',
+    'boxCBM': 'נפח קרטון (CBM)',
+    'qtyPerCarton': 'כמות יחידות בקרטון',
+    'categoryId': 'קטגוריה',
+    'category': 'קטגוריה',
+    'marginPercentage': 'אחוז רווח',
+    'usdRate': 'שער דולר'
+  };
+  return translations[fieldEn] || fieldEn;
+}
 
 /**
  * Helper to build item response object

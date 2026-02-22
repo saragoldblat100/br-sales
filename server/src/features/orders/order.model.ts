@@ -24,6 +24,7 @@ export interface IOrder extends Document {
   totalCBM: number;
   totalAmountILS: number;
   totalAmountUSD: number;
+  currency?: 'USD' | 'ILS';
   createdBy?: string;
   createdByName?: string;
   createdAt: Date;
@@ -62,6 +63,7 @@ const orderSchema = new Schema<IOrder>(
     totalCBM: { type: Number, default: 0 },
     totalAmountILS: { type: Number, default: 0 },
     totalAmountUSD: { type: Number, default: 0 },
+    currency: { type: String, enum: ['USD', 'ILS'] },
     createdBy: { type: String },
     createdByName: { type: String },
   },

@@ -45,6 +45,7 @@ export interface CreateOrderRequest {
   lines: OrderLine[];
   status: 'draft' | 'quote' | 'order';
   notes?: string;
+  currency?: 'USD' | 'ILS';
 }
 
 /**

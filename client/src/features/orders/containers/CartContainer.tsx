@@ -38,6 +38,9 @@ export function CartContainer({
     containerCount,
     formatPrice,
     handleSubmitOrder,
+    showCurrencyModal,
+    pendingOrderType,
+    handleCurrencySelected,
   } = useCart({
     items,
     customerId,
@@ -66,6 +69,9 @@ export function CartContainer({
       isSubmittingQuote={isSubmittingQuote}
       isSubmittingOrder={isSubmittingOrder}
       errorMessage={errorMessage}
+      showCurrencyModal={showCurrencyModal}
+      pendingOrderType={pendingOrderType}
+      onCurrencySelected={handleCurrencySelected}
     />
   );
 }

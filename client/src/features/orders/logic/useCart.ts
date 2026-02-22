@@ -20,6 +20,9 @@ export function useCart({
   const [notes, setNotes] = useState(initialNotes || '');
   const [submittingType, setSubmittingType] = useState<'quote' | 'order' | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showCurrencyModal, setShowCurrencyModal] = useState(false);
+  const [pendingOrderType, setPendingOrderType] = useState<'quote' | 'order' | null>(null);
+  const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'ILS' | null>(null);
   const successTimerRef = useRef<number | null>(null);
   const createOrderMutation = useCreateOrder();
 
@@ -71,7 +74,29 @@ export function useCart({
     })}`;
   };
 
-  const handleSubmitOrder = async (status: 'draft' | 'quote' | 'order') => {
+  const handleSubmitOrder = (status: 'draft' | 'quote' | 'order') => {
+    // For draft status, submit immediately without currency selection
+    if (status === 'draft') {
+      submitOrderWithCurrency(status, items[0]?.currency || 'ILS');
+      return;
+    }
+
+    // For quote and order, show currency selection modal
+    setPendingOrderType(status);
+    setShowCurrencyModal(true);
+  };
+
+  const handleCurrencySelected = (currency: 'USD' | 'ILS') => {
+    setSelectedCurrency(currency);
+
+    if (pendingOrderType) {
+      submitOrderWithCurrency(pendingOrderType, currency);
+      // Close modal after submission starts
+      setShowCurrencyModal(false);
+    }
+  };
+
+  const submitOrderWithCurrency = async (status: 'draft' | 'quote' | 'order', currency: 'USD' | 'ILS') => {
     const lines: OrderLine[] = items.map((item) => ({
       itemId: item.itemId,
       itemCode: item.itemCode,
@@ -94,6 +119,7 @@ export function useCart({
         lines,
         status,
         notes,
+        currency, // Pass selected currency
       });
 
       if (successTimerRef.current) {
@@ -105,8 +131,15 @@ export function useCart({
       successTimerRef.current = window.setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
+
+      // Reset modal state
+      setPendingOrderType(null);
+      setSelectedCurrency(null);
     } catch {
       // Error handled via mutation state
+      // Reset modal state on error too
+      setPendingOrderType(null);
+      setSelectedCurrency(null);
     } finally {
       setSubmittingType(null);
     }
@@ -127,5 +160,8 @@ export function useCart({
     containerCount: totalCBM / 67,
     formatPrice,
     handleSubmitOrder,
+    showCurrencyModal,
+    pendingOrderType,
+    handleCurrencySelected,
   };
 }

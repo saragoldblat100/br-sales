@@ -15,7 +15,7 @@ import { activityService } from '@/features/activity';
  * - order: Send email + save only log (not full order)
  */
 export const createOrder = asyncHandler(async (req: Request, res: Response) => {
-  const { customerId, customerCode, customerName, lines, status, notes } = req.body;
+  const { customerId, customerCode, customerName, lines, status, notes, currency } = req.body;
   const userId = (req as AuthenticatedRequest).user?.id;
   const userName = (req as AuthenticatedRequest).user?.username;
 
@@ -66,6 +66,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       totalCBM,
       totalAmountILS,
       totalAmountUSD,
+      currency,
       createdBy: userId,
       createdByName: userName,
     });
@@ -113,6 +114,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
         status: 'sent',
         totalCBM: orderLog.totalCBM,
         totalAmount: totalAmountILS > 0 ? totalAmountILS : totalAmountUSD,
+        currency,
         createdAt: orderLog.sentAt,
       },
     });
@@ -129,6 +131,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
     existingDraft.totalCBM = totalCBM;
     existingDraft.totalAmountILS = totalAmountILS;
     existingDraft.totalAmountUSD = totalAmountUSD;
+    existingDraft.currency = currency;
     if (userId) {
       existingDraft.createdBy = userId;
     }
@@ -151,6 +154,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       totalCBM,
       totalAmountILS,
       totalAmountUSD,
+      currency,
       createdBy: userId,
       createdByName: userName,
     });
@@ -165,6 +169,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       status: order.status,
       totalCBM: order.totalCBM,
       totalAmount: totalAmountILS > 0 ? totalAmountILS : totalAmountUSD,
+      currency: order.currency,
       createdAt: order.createdAt,
     },
   });

@@ -13,6 +13,7 @@ interface UseItemDetailModalParams {
 export function useItemDetailModal({ item, customerCode, onAddToCart, onClose }: UseItemDetailModalParams) {
   const [cartons, setCartons] = useState(1);
   const [showCurrency, setShowCurrency] = useState<'ILS' | 'USD'>('ILS');
+  const [serverError, setServerError] = useState<string | undefined>(undefined);
   const calculatePrice = useCalculatePrice();
   const debounceRef = useRef<NodeJS.Timeout>();
 
@@ -49,6 +50,39 @@ export function useItemDetailModal({ item, customerCode, onAddToCart, onClose }:
     };
   }, [hasSpecialPrice, item, cartons]);
 
+  const getErrorMessage = (error: unknown) => {
+    if (isAxiosError(error)) {
+      const data = error.response?.data as any;
+
+      // Check if missingFields is an array of objects with field and reason
+      const missingFields = Array.isArray((data as any)?.missingFields)
+        ? (data as any).missingFields
+        : undefined;
+
+      const baseMessage = data?.message || data?.error?.message || error.message;
+
+      if (missingFields && missingFields.length > 0) {
+        // Check if it's the new format with explanations
+        const hasReasons = missingFields.some((f: any) => f.reason);
+
+        if (hasReasons) {
+          // Format: Field - Reason
+          const missingText = missingFields
+            .map((f: any) => `• ${f.field}\n  ${f.reason}`)
+            .join('\n');
+          return `${baseMessage}\n\n${missingText}`;
+        } else {
+          // Old format: just field names
+          const missingText = `חסרים הנתונים הבאים: ${missingFields.join(', ')}`;
+          return baseMessage ? `${baseMessage}. ${missingText}` : `אין אפשרות לתת חישוב מחיר. ${missingText}`;
+        }
+      }
+      if (baseMessage) return baseMessage;
+    }
+
+    return 'שגיאה בחישוב מחיר';
+  };
+
   useEffect(() => {
     // If has special price, no need to call server for initial load
     if (hasSpecialPrice) return;
@@ -60,11 +94,18 @@ export function useItemDetailModal({ item, customerCode, onAddToCart, onClose }:
 
     // Calculate price from server
     debounceRef.current = setTimeout(() => {
-      calculatePrice.mutate({
-        itemId: item._id,
-        customerCode,
-        quantity: cartons * (item.qtyPerCarton || 1),
-      });
+      calculatePrice
+        .mutateAsync({
+          itemId: item._id,
+          customerCode,
+          quantity: cartons * (item.qtyPerCarton || 1),
+        })
+        .then(() => {
+          setServerError(undefined);
+        })
+        .catch((error) => {
+          setServerError(getErrorMessage(error));
+        });
     }, 100); // Short delay to batch rapid changes
 
     return () => {
@@ -79,27 +120,8 @@ export function useItemDetailModal({ item, customerCode, onAddToCart, onClose }:
   const pricing = hasSpecialPrice ? instantPricing : calculatePrice.data?.pricing;
   const isLoading = hasSpecialPrice ? false : calculatePrice.isPending;
   const errorMessage = useMemo(() => {
-    if (!calculatePrice.error) return undefined;
-
-    if (isAxiosError(calculatePrice.error)) {
-      const data = calculatePrice.error.response?.data as
-        | { message?: string; missingFields?: string[]; error?: { message?: string } }
-        | undefined;
-
-      if (data?.message) {
-        if (Array.isArray(data.missingFields) && data.missingFields.length > 0) {
-          return `${data.message} (${data.missingFields.join(', ')})`;
-        }
-        return data.message;
-      }
-
-      if (data?.error?.message) {
-        return data.error.message;
-      }
-    }
-
-    return 'שגיאה בחישוב מחיר';
-  }, [calculatePrice.error]);
+    return serverError;
+  }, [serverError]);
 
   const pricePerUnit =
     showCurrency === 'ILS' ? pricing?.sellingPricePerUnitILS : pricing?.sellingPricePerUnitUSD;

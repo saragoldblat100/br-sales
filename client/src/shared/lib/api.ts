@@ -1,5 +1,4 @@
 import axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import type { ApiError } from '@bravo/shared';
 
 /**
  * API Base URL
@@ -70,11 +69,11 @@ api.interceptors.request.use(
 
 /**
  * Response interceptor
- * Handles authentication errors
+ * Handles authentication errors and preserves error response data
  */
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<ApiError>) => {
+  (error: AxiosError<any>) => {
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
       // Only redirect if we're not already on the login page
@@ -89,9 +88,14 @@ api.interceptors.response.use(
       }
     }
 
-    // Re-throw with better error message
-    const message = error.response?.data?.error?.message || error.message;
-    return Promise.reject(new Error(message));
+    // Create error object that preserves response data for client-side handling
+    const customError = new Error(error.response?.data?.message || error.message);
+    // Attach the full response data to the error object so it can be accessed as isAxiosError(err)
+    (customError as any).response = error.response;
+    (customError as any).isAxiosError = true;
+    (customError as any).code = error.code;
+
+    return Promise.reject(customError);
   }
 );
 

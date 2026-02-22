@@ -1,5 +1,4 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
-import { isAxiosError } from 'axios';
 import { pricingApi, type PricingCalcResult, type SearchItem } from '../api/pricing.api';
 import { PricingModuleView } from './PricingModuleView';
 
@@ -69,23 +68,36 @@ export function PricingModule({ onBack }: PricingModuleProps) {
       const data = await pricingApi.calculatePrice(itemId, params);
       setResult(data);
     } catch (err: unknown) {
-      if (isAxiosError(err)) {
-        const data = err.response?.data as
-          | { message?: string; missingFields?: string[]; error?: { message?: string } }
-          | undefined;
+      // Handle both AxiosError and custom errors with attached response
+      const axiosErr = err as any;
+      const data = axiosErr?.response?.data;
 
-        if (data?.message) {
-          setCalcError(data.message);
-          if (Array.isArray(data.missingFields)) {
-            setMissingFields(data.missingFields);
-          }
-          return;
-        }
+      if (data?.message) {
+        setCalcError(data.message);
 
-        if (data?.error?.message) {
-          setCalcError(data.error.message);
-          return;
+        // Handle new format: missingFields as array of objects with field and reason
+        if (Array.isArray(data.missingFields)) {
+          const fields = data.missingFields as Array<{ field?: string; reason?: string } | string>;
+          const displayFields = fields.map(f => {
+            // If it's an object with field property
+            if (typeof f === 'object' && f.field) {
+              return f.field;
+            }
+            // If it's a plain string
+            return String(f);
+          });
+          setMissingFields(displayFields);
         }
+        // Handle old format: missing as simple array of strings
+        else if (Array.isArray(data.missing)) {
+          setMissingFields(data.missing);
+        }
+        return;
+      }
+
+      if (data?.error?.message) {
+        setCalcError(data.error.message);
+        return;
       }
 
       const message = err instanceof Error ? err.message : 'שגיאה בחישוב המחיר';

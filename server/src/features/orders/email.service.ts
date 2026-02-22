@@ -69,7 +69,7 @@ const generateOrderEmailHTML = (order: IOrder): string => {
       <style>
         body { font-family: Arial, sans-serif; direction: rtl; }
         table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th { background-color: #f44336; color: white; padding: 10px; text-align: center; }
+        th { background-color: #f8b0ab; color: white; padding: 10px; text-align: center; }
         td { padding: 8px; border: 1px solid #ddd; }
         .header { background-color: #f5f5f5; padding: 20px; text-align: center; }
         .content { padding: 20px; }
@@ -78,14 +78,14 @@ const generateOrderEmailHTML = (order: IOrder): string => {
     </head>
     <body>
       <div class="header">
-        <h1 style="color: #f44336;">הזמנה חדשה - Bravo</h1>
+        <h1 style="color: #f8b0aמנה חדשה - Bravo</h1>
         <p>מספר הזמנה: <strong>${order.orderNumber}</strong></p>
       </div>
 
       <div class="content">
         <h2>פרטי לקוח</h2>
         <p><strong>שם לקוח:</strong> ${order.customerName}</p>
-        <p><strong>קוד לקוח:</strong> ${order.customerCode}</p>
+        // <p><strong>קוד לקוח:</strong> ${order.customerCode}</p>
 
         <h2>פריטים</h2>
         <table>
