@@ -69,7 +69,7 @@ const generateOrderEmailHTML = (order: IOrder): string => {
       <style>
         body { font-family: Arial, sans-serif; direction: rtl; }
         table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th { background-color: #f8b0ab; color: white; padding: 10px; text-align: center; }
+        th { background-color: #ff5448; color: white; padding: 10px; text-align: center; }
         td { padding: 8px; border: 1px solid #ddd; }
         .header { background-color: #f5f5f5; padding: 20px; text-align: center; }
         .content { padding: 20px; }

@@ -19,6 +19,22 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const userId = (req as AuthenticatedRequest).user?.id;
   const userName = (req as AuthenticatedRequest).user?.username;
 
+  // Validate that all lines have consistent currency when currency is specified
+  if (currency && lines.length > 0) {
+    const invalidLines = lines.filter((line: any) => line.currency !== currency);
+    if (invalidLines.length > 0) {
+      logger.warn(`Currency mismatch in order: expected ${currency}, got mixed currencies`, {
+        customerId,
+        currency,
+        lineCurrencies: lines.map((l: any) => l.currency),
+      });
+      return res.status(400).json({
+        success: false,
+        message: `כל הפריטים חייבים להיות ב${currency === 'USD' ? 'דולרים' : 'שקלים'}`,
+      });
+    }
+  }
+
   // Calculate totals
   const totalCBM = lines.reduce((sum: number, line: any) => sum + (line.cbm || 0), 0);
   const totalAmountILS = lines

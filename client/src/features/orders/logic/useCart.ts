@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CartItem, OrderLine } from '../api';
 import { useCreateOrder } from '../api';
+import { api } from '@/shared/lib/api';
 
 interface UseCartParams {
   items: CartItem[];
@@ -97,21 +98,48 @@ export function useCart({
   };
 
   const submitOrderWithCurrency = async (status: 'draft' | 'quote' | 'order', currency: 'USD' | 'ILS') => {
-    const lines: OrderLine[] = items.map((item) => ({
-      itemId: item.itemId,
-      itemCode: item.itemCode,
-      description: item.nameHe || item.englishDescription || item.itemCode,
-      quantity: item.cartons * item.qtyPerCarton,
-      cartons: item.cartons,
-      pricePerUnit: item.pricePerUnit,
-      pricePerCarton: item.pricePerCarton,
-      totalPrice: item.totalPrice,
-      currency: item.currency,
-      cbm: (item.boxCBM || 0) * item.cartons,
-    }));
-
     try {
       setSubmittingType(status === 'quote' ? 'quote' : 'order');
+
+      // Get current exchange rate from server
+      const rateResponse = await api.get('/currency/current');
+      const exchangeRate = rateResponse.data.rate.usdRate;
+
+      // Convert all items to the selected currency
+      const lines: OrderLine[] = items.map((item) => {
+        let pricePerUnit = item.pricePerUnit;
+        let pricePerCarton = item.pricePerCarton;
+        let totalPrice = item.totalPrice;
+
+        // If item is in different currency than selected, convert it
+        if (item.currency !== currency) {
+          if (currency === 'ILS' && item.currency === 'USD') {
+            // Convert USD to ILS
+            pricePerUnit = pricePerUnit * exchangeRate;
+            pricePerCarton = pricePerCarton * exchangeRate;
+            totalPrice = totalPrice * exchangeRate;
+          } else if (currency === 'USD' && item.currency === 'ILS') {
+            // Convert ILS to USD
+            pricePerUnit = pricePerUnit / exchangeRate;
+            pricePerCarton = pricePerCarton / exchangeRate;
+            totalPrice = totalPrice / exchangeRate;
+          }
+        }
+
+        return {
+          itemId: item.itemId,
+          itemCode: item.itemCode,
+          description: item.nameHe || item.englishDescription || item.itemCode,
+          quantity: item.cartons * item.qtyPerCarton,
+          cartons: item.cartons,
+          pricePerUnit,
+          pricePerCarton,
+          totalPrice,
+          currency, // Use selected currency for all items
+          cbm: (item.boxCBM || 0) * item.cartons,
+        };
+      });
+
       await createOrderMutation.mutateAsync({
         customerId,
         customerCode,
