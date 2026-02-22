@@ -1,4 +1,4 @@
-import { ShoppingCart, Trash2, Package, AlertCircle, CheckCircle, Loader2, X } from 'lucide-react';
+import { ShoppingCart, Trash2, Package, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import type { CartItem } from '../api';
 
 interface CartViewProps {
@@ -210,57 +210,74 @@ export function CartView({
 
       {/* Currency Selection Modal */}
       {showCurrencyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" dir="rtl">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-sm w-full mx-4">
-            {/* Close button */}
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-gray-900">
-                באיזה מטבע לשלוח את ההזמנה?
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-gray-50 to-white p-6 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 text-center">
+                בחר מטבע להזמנה
               </h2>
-              <button
-                onClick={() => {
-                  // Close modal without submitting
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <p className="text-sm text-gray-500 text-center mt-2">
+                כל המחירים יהיו באותו מטבע בלבד
+              </p>
             </div>
 
-            <p className="text-sm text-gray-600 mb-6">
-              בחר את המטבע שבו תשלח את ההזמנה. כל המחירים יהיו במטבע שנבחר בלבד.
-            </p>
-
-            {/* Currency buttons */}
-            <div className="flex gap-3">
+            {/* Content */}
+            <div className="p-6 space-y-3">
+              {/* USD Option */}
               <button
                 onClick={() => onCurrencySelected?.('USD')}
                 disabled={isSubmittingQuote || isSubmittingOrder}
-                className="flex-1 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-left group"
               >
-                {isSubmittingOrder || isSubmittingQuote ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>$</span>
-                    <span>שלח בדולרים</span>
-                  </>
-                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center group-hover:bg-blue-200 transition-colors">
+                      <span className="text-2xl font-bold text-blue-600">$</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">דולר אמריקאי</h3>
+                      <p className="text-sm text-gray-500">USD</p>
+                    </div>
+                  </div>
+                  {isSubmittingOrder || isSubmittingQuote ? (
+                    <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-300 group-hover:border-blue-400" />
+                  )}
+                </div>
               </button>
+
+              {/* ILS Option */}
               <button
                 onClick={() => onCurrencySelected?.('ILS')}
                 disabled={isSubmittingQuote || isSubmittingOrder}
-                className="flex-1 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-green-400 hover:bg-green-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-left group"
               >
-                {isSubmittingOrder || isSubmittingQuote ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <span>₪</span>
-                    <span>שלח בשקלים</span>
-                  </>
-                )}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition-colors">
+                      <span className="text-2xl font-bold text-green-600">₪</span>
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">שקל ישראלי</h3>
+                      <p className="text-sm text-gray-500">ILS</p>
+                    </div>
+                  </div>
+                  {isSubmittingOrder || isSubmittingQuote ? (
+                    <Loader2 className="w-5 h-5 text-green-600 animate-spin" />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full border-2 border-gray-300 group-hover:border-green-400" />
+                  )}
+                </div>
               </button>
+            </div>
+
+            {/* Footer Info */}
+            <div className="bg-gray-50 px-6 py-3 border-t border-gray-100">
+              <p className="text-xs text-gray-600 text-center">
+                המחירים יומרו אוטומטית לפי שער החליפין הנוכחי
+              </p>
             </div>
           </div>
         </div>
