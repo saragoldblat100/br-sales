@@ -42,12 +42,12 @@ const generateOrderEmailHTML = (order: IOrder): string => {
     .map(
       (line) => `
       <tr>
-        <td style="padding: 8px; border: 1px solid #ddd;">${line.itemCode}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${line.description}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${line.cartons}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${line.quantity}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatPrice(line.pricePerUnit, line.currency)}</td>
-        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatPrice(line.totalPrice, line.currency)}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${line.itemCode}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${line.description}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${line.cartons}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${line.quantity}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center;">${formatPrice(line.pricePerUnit, line.currency)}</td>
+        <td style="padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: center; font-weight: bold;">${formatPrice(line.totalPrice, line.currency)}</td>
       </tr>
     `
     )
@@ -55,10 +55,10 @@ const generateOrderEmailHTML = (order: IOrder): string => {
 
   const totalsHTML = [];
   if (order.totalAmountILS > 0) {
-    totalsHTML.push(`<p><strong>סה"כ בשקלים:</strong> ${formatPrice(order.totalAmountILS, 'ILS')}</p>`);
+    totalsHTML.push(`<div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 2px solid #3b82f6;"><span>סה"כ בשקלים:</span><span style="font-weight: bold; color: #3b82f6;">${formatPrice(order.totalAmountILS, 'ILS')}</span></div>`);
   }
   if (order.totalAmountUSD > 0) {
-    totalsHTML.push(`<p><strong>סה"כ בדולרים:</strong> ${formatPrice(order.totalAmountUSD, 'USD')}</p>`);
+    totalsHTML.push(`<div style="display: flex; justify-content: space-between; padding: 8px 0;"><span>סה"כ בדולרים:</span><span style="font-weight: bold; color: #3b82f6;">${formatPrice(order.totalAmountUSD, 'USD')}</span></div>`);
   }
 
   return `
@@ -66,54 +66,232 @@ const generateOrderEmailHTML = (order: IOrder): string => {
     <html dir="rtl" lang="he">
     <head>
       <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <style>
-        body { font-family: Arial, sans-serif; direction: rtl; }
-        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
-        th { background-color: #f8b0ab; color: white; padding: 10px; text-align: center; }
-        td { padding: 8px; border: 1px solid #ddd; }
-        .header { background-color: #f5f5f5; padding: 20px; text-align: center; }
-        .content { padding: 20px; }
-        .footer { background-color: #f5f5f5; padding: 10px; text-align: center; font-size: 12px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+          direction: rtl;
+          background-color: #f9fafb;
+          color: #374151;
+          line-height: 1.6;
+        }
+        .container {
+          max-width: 600px;
+          margin: 0 auto;
+          background-color: white;
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+          background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+          padding: 30px 20px;
+          text-align: center;
+          color: white;
+        }
+        .header h1 {
+          font-size: 28px;
+          margin-bottom: 10px;
+          font-weight: 700;
+        }
+        .header p {
+          font-size: 14px;
+          opacity: 0.95;
+        }
+        .order-number {
+          background-color: rgba(255, 255, 255, 0.2);
+          padding: 10px 15px;
+          border-radius: 4px;
+          margin-top: 10px;
+          display: inline-block;
+          font-weight: 600;
+        }
+        .content {
+          padding: 30px 20px;
+        }
+        .section {
+          margin-bottom: 30px;
+        }
+        .section h2 {
+          font-size: 16px;
+          font-weight: 700;
+          color: #1f2937;
+          margin-bottom: 12px;
+          padding-bottom: 8px;
+          border-bottom: 2px solid #f0f0f0;
+        }
+        .customer-info {
+          background-color: #f9fafb;
+          padding: 15px;
+          border-radius: 6px;
+          border-right: 4px solid #3b82f6;
+        }
+        .info-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 8px;
+          font-size: 14px;
+        }
+        .info-row:last-child {
+          margin-bottom: 0;
+        }
+        .info-label {
+          font-weight: 600;
+          color: #1f2937;
+        }
+        .info-value {
+          color: #6b7280;
+        }
+        table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 15px 0;
+        }
+        th {
+          background-color: #f3f4f6;
+          color: #1f2937;
+          padding: 12px;
+          text-align: right;
+          font-weight: 700;
+          font-size: 13px;
+          border-bottom: 2px solid #3b82f6;
+        }
+        td {
+          padding: 12px;
+          border-bottom: 1px solid #e5e7eb;
+          font-size: 13px;
+        }
+        tr:last-child td {
+          border-bottom: none;
+        }
+        .summary-section {
+          background-color: #f9fafb;
+          padding: 20px;
+          border-radius: 6px;
+          border-left: 4px solid #3b82f6;
+        }
+        .summary-row {
+          display: flex;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          font-size: 14px;
+        }
+        .summary-row:last-child {
+          margin-bottom: 0;
+        }
+        .summary-label {
+          font-weight: 600;
+          color: #1f2937;
+        }
+        .summary-value {
+          font-weight: 600;
+          color: #3b82f6;
+        }
+        .notes-section {
+          background-color: #fef3c7;
+          padding: 15px;
+          border-radius: 6px;
+          border-right: 4px solid #f59e0b;
+          margin-top: 20px;
+        }
+        .notes-section h3 {
+          font-size: 13px;
+          font-weight: 700;
+          color: #92400e;
+          margin-bottom: 8px;
+        }
+        .notes-section p {
+          font-size: 13px;
+          color: #78350f;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+        }
+        .footer {
+          background-color: #1f2937;
+          color: white;
+          padding: 20px;
+          text-align: center;
+          font-size: 12px;
+        }
+        .footer p {
+          margin-bottom: 5px;
+        }
+        .footer p:last-child {
+          margin-bottom: 0;
+          opacity: 0.8;
+        }
+        .bravo-logo {
+          font-weight: 700;
+          color: #3b82f6;
+        }
       </style>
     </head>
     <body>
-      <div class="header">
-        <h1 style="color: #f8b0aמנה חדשה - Bravo</h1>
-        <p>מספר הזמנה: <strong>${order.orderNumber}</strong></p>
-      </div>
+      <div class="container">
+        <div class="header">
+          <h1>🛒 הזמנה חדשה</h1>
+          <div class="order-number">מספר הזמנה: ${order.orderNumber}</div>
+        </div>
 
-      <div class="content">
-        <h2>פרטי לקוח</h2>
-        <p><strong>שם לקוח:</strong> ${order.customerName}</p>
-        // <p><strong>קוד לקוח:</strong> ${order.customerCode}</p>
+        <div class="content">
+          {/* Customer Information */}
+          <div class="section">
+            <h2>👤 פרטי לקוח</h2>
+            <div class="customer-info">
+              <div class="info-row">
+                <span class="info-label">שם לקוח:</span>
+                <span class="info-value">${order.customerName}</span>
+              </div>
+            </div>
+          </div>
 
-        <h2>פריטים</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>מק"ט</th>
-              <th>שם פריט</th>
-              <th>קרטונים</th>
-              <th>כמות יחידות</th>
-              <th>מחיר ליחידה</th>
-              <th>סה"כ</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${linesHTML}
-          </tbody>
-        </table>
+          {/* Items Table */}
+          <div class="section">
+            <h2>📦 פריטים הזמונים</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>מק"ט</th>
+                  <th>שם פריט</th>
+                  <th>קרטונים</th>
+                  <th>יחידות</th>
+                  <th>מחיר יחידה</th>
+                  <th>סה"כ</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${linesHTML}
+              </tbody>
+            </table>
+          </div>
 
-        <h2>סיכום</h2>
-        <p><strong>סה"כ CBM:</strong> ${order.totalCBM.toFixed(3)}</p>
-        ${totalsHTML.join('')}
+          {/* Summary */}
+          <div class="section">
+            <h2>💰 סיכום הזמנה</h2>
+            <div class="summary-section">
+              <div class="summary-row">
+                <span class="summary-label">סה"כ CBM:</span>
+                <span>${order.totalCBM.toFixed(3)}</span>
+              </div>
+              ${totalsHTML.join('')}
+            </div>
+          </div>
 
-        ${order.notes ? `<h2>הערות</h2><p>${order.notes}</p>` : ''}
-      </div>
+          ${order.notes ? `
+          <div class="section">
+            <div class="notes-section">
+              <h3>📝 הערות</h3>
+              <p>${order.notes}</p>
+            </div>
+          </div>
+          ` : ''}
+        </div>
 
-      <div class="footer">
-        <p>הזמנה זו נוצרה אוטומטית ממערכת Bravo Sales</p>
-        <p>${new Date().toLocaleString('he-IL')}</p>
+        <div class="footer">
+          <p>הזמנה זו נוצרה אוטומטית ממערכת <span class="bravo-logo">Bravo</span> Sales</p>
+          <p>${new Date().toLocaleString('he-IL')}</p>
+        </div>
       </div>
     </body>
     </html>
@@ -127,7 +305,7 @@ const generateOrderEmailText = (order: IOrder): string => {
   const lines = order.lines
     .map(
       (line) =>
-        `${line.itemCode} | ${line.description} | ${line.cartons} קרטונים | ${line.quantity} יח' | ${formatPrice(line.pricePerUnit, line.currency)} ליחידה | סה"כ: ${formatPrice(line.totalPrice, line.currency)}`
+        `${line.itemCode.padEnd(15)} | ${line.description.padEnd(30)} | ${String(line.cartons).padStart(3)} | ${String(line.quantity).padStart(5)} | ${formatPrice(line.pricePerUnit, line.currency).padStart(10)} | ${formatPrice(line.totalPrice, line.currency).padStart(10)}`
     )
     .join('\n');
 
@@ -139,28 +317,41 @@ const generateOrderEmailText = (order: IOrder): string => {
     totals += `סה"כ בדולרים: ${formatPrice(order.totalAmountUSD, 'USD')}\n`;
   }
 
+  const separator = '════════════════════════════════════════════════════════════════════════════════';
+
   return `
-הזמנה חדשה - Bravo
-==================
+${separator}
+🛒 הזמנה חדשה - Bravo Sales
+${separator}
 
+📋 פרטי הזמנה
+─────────────────────────────────────────────────────────────────────────────────
 מספר הזמנה: ${order.orderNumber}
+תאריך: ${new Date().toLocaleString('he-IL')}
 
-פרטי לקוח
----------
+👤 פרטי לקוח
+─────────────────────────────────────────────────────────────────────────────────
 שם לקוח: ${order.customerName}
 
-פריטים
-------
+📦 פריטים הזמונים
+─────────────────────────────────────────────────────────────────────────────────
+מק"ט         | שם פריט                      | קרט | יחידות | מחיר יח | סה"כ
+─────────────────────────────────────────────────────────────────────────────────
 ${lines}
 
-סיכום
------
+💰 סיכום הזמנה
+─────────────────────────────────────────────────────────────────────────────────
+סה"כ CBM: ${order.totalCBM.toFixed(3)}
 ${totals}
-${order.notes ? `הערות: ${order.notes}` : ''}
-
----
+${order.notes ? `
+📝 הערות
+─────────────────────────────────────────────────────────────────────────────────
+${order.notes}
+` : ''}
+${separator}
 הזמנה זו נוצרה אוטומטית ממערכת Bravo Sales
 ${new Date().toLocaleString('he-IL')}
+${separator}
   `.trim();
 };
 
