@@ -43,6 +43,14 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Unmark collection state
+  const [unmarkModal, setUnmarkModal] = useState<{
+    isOpen: boolean;
+    caseNumber: string;
+    customerName: string;
+  }>({ isOpen: false, caseNumber: '', customerName: '' });
+  const [unmarking, setUnmarking] = useState(false);
+
   useEffect(() => {
     fetchCollectionData();
   }, []);
@@ -124,6 +132,39 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
       ...prev,
       [caseNumber]: !prev[caseNumber],
     }));
+  };
+
+  const handleUnmarkCollection = (caseNumber: string, customerName: string) => {
+    setUnmarkModal({ isOpen: true, caseNumber, customerName });
+  };
+
+  const confirmUnmarkCollection = async () => {
+    const { caseNumber, customerName } = unmarkModal;
+    if (!caseNumber || !customerName) return;
+
+    setUnmarking(true);
+    try {
+      const result = await collectionApi.unmarkCollected(caseNumber, customerName);
+
+      if (result.success) {
+        setUnmarkModal({ isOpen: false, caseNumber: '', customerName: '' });
+        // Refresh the collection data
+        await fetchCollectionData();
+
+        // Refresh stats if showing recent collected
+        if (showRecentCollected) {
+          await fetchStats();
+        }
+
+        alert('הגבייה בוטלה בהצלחה');
+      } else {
+        alert(result.message || 'שגיאה בביטול הגבייה');
+      }
+    } catch {
+      alert('שגיאה בהתחברות לשרת');
+    } finally {
+      setUnmarking(false);
+    }
   };
 
   // File upload handlers
@@ -276,6 +317,11 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
       onClearFile={clearFile}
       onToggleRecentCollected={handleToggleRecentCollected}
       onDateFromChange={handleDateFromChange}
+      onUnmarkCollection={handleUnmarkCollection}
+      unmarkModal={unmarkModal}
+      onCancelUnmark={() => setUnmarkModal({ isOpen: false, caseNumber: '', customerName: '' })}
+      onConfirmUnmark={confirmUnmarkCollection}
+      unmarking={unmarking}
     />
   );
 }

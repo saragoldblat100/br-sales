@@ -72,6 +72,17 @@ export interface CollectionModuleViewProps {
   // Filter handlers
   onToggleRecentCollected: () => void;
   onDateFromChange: (date: string) => void;
+
+  // Unmark collection state & handlers
+  unmarkModal: {
+    isOpen: boolean;
+    caseNumber: string;
+    customerName: string;
+  };
+  unmarking: boolean;
+  onUnmarkCollection: (caseNumber: string, customerName: string) => void;
+  onCancelUnmark: () => void;
+  onConfirmUnmark: () => void;
 }
 
 // Helper functions
@@ -289,10 +300,16 @@ function RecentCollectedList({
   data,
   loading,
   dateFrom,
+  userRole,
+  onUnmarkCollection,
+  unmatchingCases,
 }: {
   data: CollectionStatsResponse | null;
   loading: boolean;
   dateFrom: string;
+  userRole?: string;
+  onUnmarkCollection: (caseNumber: string, customerName: string) => void;
+  unmatchingCases: Set<string>;
 }) {
   if (loading) {
     return (
@@ -359,8 +376,20 @@ function RecentCollectedList({
                 {record.collectedBy && ` • ${record.collectedBy}`}
               </p>
             </div>
-            <div className="text-left">
+            <div className="flex items-center gap-4">
               <p className="font-bold text-emerald-600">{formatCurrency(record.collectedAmount)}</p>
+              {['manager', 'accountant', 'admin'].includes(userRole || '') && (
+                <button
+                  onClick={() => {
+                    const key = `${record.caseNumber}-${record.customerName}`;
+                    onUnmarkCollection(record.caseNumber, record.customerName);
+                  }}
+                  className="px-3 py-1 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                  title="בטל גבייה זו"
+                >
+                  בטל גבייה
+                </button>
+              )}
             </div>
           </div>
         ))}
@@ -654,6 +683,9 @@ export function CollectionModuleView({
                 data={recentCollectedData}
                 loading={loadingStats}
                 dateFrom={dateFrom}
+                userRole={userRole}
+                onUnmarkCollection={onUnmarkCollection}
+                unmatchingCases={new Set()}
               />
             </div>
           </div>
@@ -692,6 +724,57 @@ export function CollectionModuleView({
         onCancel={onCloseCollectionModal}
         isLoading={!!markingCase}
       />
+
+      {/* Unmark Collection Confirmation Modal */}
+      {unmarkModal.isOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full">
+            <div className="bg-gradient-to-r from-red-50 to-orange-50 p-6 border-b border-red-100">
+              <h2 className="text-xl font-bold text-gray-900 text-center">
+                בטל גבייה
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  אתה בעמדת ביטול הגבייה של:
+                </p>
+                <p className="font-bold text-gray-900 mt-2">{unmarkModal.customerName}</p>
+                <p className="text-sm text-gray-600">תיק #{unmarkModal.caseNumber}</p>
+              </div>
+
+              <p className="text-sm text-gray-600 text-center">
+                פעולה זו תחזיר את התיק לרשימת הגבייה. האם אתה בטוח?
+              </p>
+            </div>
+
+            <div className="bg-gray-50 px-6 py-4 flex gap-3">
+              <button
+                onClick={onCancelUnmark}
+                disabled={unmarking}
+                className="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={onConfirmUnmark}
+                disabled={unmarking}
+                className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {unmarking ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    בטל גבייה
+                  </>
+                ) : (
+                  'אישור - בטל גבייה'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
