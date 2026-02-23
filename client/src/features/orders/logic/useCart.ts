@@ -23,7 +23,6 @@ export function useCart({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showCurrencyModal, setShowCurrencyModal] = useState(false);
   const [pendingOrderType, setPendingOrderType] = useState<'quote' | 'order' | null>(null);
-  const [selectedCurrency, setSelectedCurrency] = useState<'USD' | 'ILS' | null>(null);
   const successTimerRef = useRef<number | null>(null);
   const createOrderMutation = useCreateOrder();
 
@@ -88,8 +87,6 @@ export function useCart({
   };
 
   const handleCurrencySelected = (currency: 'USD' | 'ILS') => {
-    setSelectedCurrency(currency);
-
     if (pendingOrderType) {
       submitOrderWithCurrency(pendingOrderType, currency);
       // Close modal after submission starts
@@ -163,12 +160,10 @@ export function useCart({
 
       // Reset modal state
       setPendingOrderType(null);
-      setSelectedCurrency(null);
     } catch {
       // Error handled via mutation state
       // Reset modal state on error too
       setPendingOrderType(null);
-      setSelectedCurrency(null);
     } finally {
       setSubmittingType(null);
     }

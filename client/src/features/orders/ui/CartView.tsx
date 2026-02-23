@@ -21,7 +21,6 @@ interface CartViewProps {
   isSubmittingOrder: boolean;
   errorMessage?: string;
   showCurrencyModal?: boolean;
-  pendingOrderType?: 'quote' | 'order' | null;
   onCurrencySelected?: (currency: 'USD' | 'ILS') => void;
 }
 
@@ -45,7 +44,6 @@ export function CartView({
   isSubmittingOrder,
   errorMessage,
   showCurrencyModal = false,
-  pendingOrderType,
   onCurrencySelected,
 }: CartViewProps) {
   if (items.length === 0) {

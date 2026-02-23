@@ -302,14 +302,12 @@ function RecentCollectedList({
   dateFrom,
   userRole,
   onUnmarkCollection,
-  unmatchingCases,
 }: {
   data: CollectionStatsResponse | null;
   loading: boolean;
   dateFrom: string;
   userRole?: string;
   onUnmarkCollection: (caseNumber: string, customerName: string) => void;
-  unmatchingCases: Set<string>;
 }) {
   if (loading) {
     return (
@@ -380,10 +378,7 @@ function RecentCollectedList({
               <p className="font-bold text-emerald-600">{formatCurrency(record.collectedAmount)}</p>
               {['manager', 'accountant', 'admin'].includes(userRole || '') && (
                 <button
-                  onClick={() => {
-                    const key = `${record.caseNumber}-${record.customerName}`;
-                    onUnmarkCollection(record.caseNumber, record.customerName);
-                  }}
+                  onClick={() => onUnmarkCollection(record.caseNumber, record.customerName)}
                   className="px-3 py-1 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                   title="בטל גבייה זו"
                 >
@@ -542,6 +537,11 @@ export function CollectionModuleView({
   onDateFromChange,
   recentCollectedData,
   loadingStats,
+  unmarkModal,
+  unmarking,
+  onUnmarkCollection,
+  onCancelUnmark,
+  onConfirmUnmark,
 }: CollectionModuleViewProps) {
   const customer = selectedCustomer
     ? customers.find((c) => c.customerName === selectedCustomer)
@@ -685,7 +685,6 @@ export function CollectionModuleView({
                 dateFrom={dateFrom}
                 userRole={userRole}
                 onUnmarkCollection={onUnmarkCollection}
-                unmatchingCases={new Set()}
               />
             </div>
           </div>
