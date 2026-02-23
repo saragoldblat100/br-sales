@@ -264,7 +264,13 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
     const newValue = !showRecentCollected;
     setShowRecentCollected(newValue);
     setSelectedCustomer(null);
+
     if (newValue) {
+      // Clear file upload state when switching to recent collections
+      setFile(null);
+      setUploadMode(null);
+      setUploadResult(null);
+
       // When enabling, set default date to 30 days ago and fetch stats
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
