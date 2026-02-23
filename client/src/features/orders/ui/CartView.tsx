@@ -237,7 +237,7 @@ export function CartView({
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">דולר אמריקאי</h3>
-                      <p className="text-sm text-gray-500">USD</p>
+                      <p className="text-xs text-gray-500">סה"כ: {formatPrice(totalAmountUSD, 'USD')}</p>
                     </div>
                   </div>
                   {isSubmittingOrder || isSubmittingQuote ? (
@@ -261,7 +261,7 @@ export function CartView({
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">שקל ישראלי</h3>
-                      <p className="text-sm text-gray-500">ILS</p>
+                      <p className="text-xs text-gray-500">סה"כ: {formatPrice(totalAmountILS, 'ILS')}</p>
                     </div>
                   </div>
                   {isSubmittingOrder || isSubmittingQuote ? (

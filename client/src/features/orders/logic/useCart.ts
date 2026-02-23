@@ -102,8 +102,9 @@ export function useCart({
       setSubmittingType(status === 'quote' ? 'quote' : 'order');
 
       // Get current exchange rate from server
+      // Use usdRateWithMargin to match the rate used in pricing calculations
       const rateResponse = await api.get('/currency/current');
-      const exchangeRate = rateResponse.data.rate.usdRate;
+      const exchangeRate = rateResponse.data.rate.usdRateWithMargin;
 
       // Convert all items to the selected currency
       const lines: OrderLine[] = items.map((item) => {
