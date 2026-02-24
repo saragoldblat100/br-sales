@@ -1,4 +1,5 @@
 import type { RefObject } from 'react';
+import { useState } from 'react';
 import {
   ArrowRight,
   LogOut,
@@ -59,7 +60,7 @@ export interface CollectionModuleViewProps {
   onToggleCase: (caseNumber: string) => void;
   onOpenCollectionModal: (caseItem: CollectionCase, customerName: string) => void;
   onCloseCollectionModal: () => void;
-  onConfirmCollection: (amount: number) => void;
+  onConfirmCollection: (amount: number, note?: string) => void;
 
   // Upload handlers
   onDrag: (e: React.DragEvent) => void;
@@ -83,6 +84,17 @@ export interface CollectionModuleViewProps {
   onUnmarkCollection: (caseNumber: string, customerName: string) => void;
   onCancelUnmark: () => void;
   onConfirmUnmark: () => void;
+
+  // Delete collection state & handlers
+  deleteModal: {
+    isOpen: boolean;
+    caseNumber: string;
+    customerName: string;
+  };
+  deleting: boolean;
+  onDeleteCollection: (caseNumber: string, customerName: string) => void;
+  onCancelDelete: () => void;
+  onConfirmDelete: () => void;
 }
 
 // Helper functions
@@ -241,38 +253,47 @@ function CustomerList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
+    <div className="space-y-3 pb-12">
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden border border-gray-200">
         {customers.map((customer, index) => (
           <button
             key={customer.customerName}
             onClick={() => onSelectCustomer(customer.customerName)}
-            className={`w-full text-right p-4 hover:bg-gray-50 transition-all flex items-center gap-4 ${
+            className={`w-full text-right p-3 hover:bg-gray-50 transition-colors ${
               index !== customers.length - 1 ? 'border-b border-gray-100' : ''
             }`}
           >
-            <div className="flex-shrink-0">
-              <div className={`w-3 h-3 rounded-full ${
-                customer.urgency?.color === 'red' ? 'bg-red-500' :
-                customer.urgency?.color === 'orange' ? 'bg-amber-500' :
-                customer.urgency?.color === 'green' ? 'bg-emerald-500' : 'bg-gray-300'
-              }`} />
-            </div>
+            <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3">
+              {/* Left: Urgency + Name + Cases */}
+              <div className="flex items-start gap-2 min-w-0">
+                <div className={`mt-1 w-2.5 h-2.5 rounded-full flex-shrink-0 ${
+                  customer.urgency?.color === 'red' ? 'bg-red-500' :
+                  customer.urgency?.color === 'orange' ? 'bg-amber-500' :
+                  customer.urgency?.color === 'green' ? 'bg-emerald-500' : 'bg-gray-300'
+                }`} />
+                <div className="min-w-0">
+                  <div className="text-base font-semibold text-gray-900 truncate">
+                    {customer.customerName}
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {customer.totalCases} תיקים
+                  </div>
+                </div>
+              </div>
 
-            <div className="flex-grow min-w-0">
-              <h3 className="font-bold text-gray-900 truncate">{customer.customerName}</h3>
-              <div className="flex items-center gap-3 text-sm text-gray-500 mt-1">
-                <span>{customer.totalCases} תיקים</span>
-                <span>•</span>
-                <span>{getUrgencyText(customer.urgency)}</span>
+              {/* Middle: Urgency Text */}
+              <div className="text-xs text-gray-400 whitespace-nowrap">
+                {getUrgencyText(customer.urgency)}
+              </div>
+
+              {/* Right: Amount + Chevron */}
+              <div className="flex items-center gap-1.5">
+                <div className="text-base font-bold text-gray-900 whitespace-nowrap">
+                  {formatCurrency(customer.totalWithVAT)}
+                </div>
+                <ChevronDown className="h-4 w-4 text-gray-400 flex-shrink-0" style={{ transform: 'rotate(90deg)' }} />
               </div>
             </div>
-
-            <div className="flex-shrink-0 text-left">
-              <p className="font-bold text-gray-900">{formatCurrency(customer.totalWithVAT)}</p>
-            </div>
-
-            <ChevronDown className="h-5 w-5 text-gray-400 rotate-90 " />
           </button>
         ))}
       </div>
@@ -302,13 +323,17 @@ function RecentCollectedList({
   dateFrom,
   userRole,
   onUnmarkCollection,
+  onDeleteCollection,
 }: {
   data: CollectionStatsResponse | null;
   loading: boolean;
   dateFrom: string;
   userRole?: string;
   onUnmarkCollection: (caseNumber: string, customerName: string) => void;
+  onDeleteCollection: (caseNumber: string, customerName: string) => void;
 }) {
+  const [expandedCustomers, setExpandedCustomers] = useState<Record<string, boolean>>({});
+
   if (loading) {
     return (
       <div className="min-h-[200px] flex items-center justify-center">
@@ -347,47 +372,136 @@ function RecentCollectedList({
     );
   }
 
+  // Group by customer name
+  const groupedByCustomer = sortedRecords.reduce(
+    (acc, record) => {
+      if (!acc[record.customerName]) {
+        acc[record.customerName] = [];
+      }
+      acc[record.customerName].push(record);
+      return acc;
+    },
+    {} as Record<string, typeof sortedRecords>
+  );
+
   const totalCollected = sortedRecords.reduce((sum, r) => sum + r.collectedAmount, 0);
+  const customerNames = Object.keys(groupedByCustomer).sort();
 
   return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-2xl shadow-xl p-5">
-        <div className="flex items-center justify-between">
-          <span className="text-gray-600">{sortedRecords.length} גביות</span>
-          <span className="font-bold text-lg text-emerald-600">{formatCurrency(totalCollected)}</span>
+    <div className="space-y-2">
+      {/* Summary Card */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm px-3 py-2">
+        <div className="grid grid-cols-3 gap-1 text-center">
+          <div>
+            <p className="text-xs text-gray-600">סה״כ גבייה</p>
+            <p className="font-bold text-sm text-blue-600 leading-tight">{formatCurrency(totalCollected)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">לקוחות</p>
+            <p className="font-bold text-sm text-gray-900 leading-tight">{customerNames.length}</p>
+          </div>
+          <div>
+            <p className="text-xs text-gray-600">תיקים</p>
+            <p className="font-bold text-sm text-gray-900 leading-tight">{sortedRecords.length}</p>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-        {sortedRecords.map((record, index) => (
-          <div
-            key={`${record.caseNumber}-${record.customerName}`}
-            className={`p-4 flex items-center justify-between ${
-              index !== sortedRecords.length - 1 ? 'border-b border-gray-100' : ''
-            }`}
-          >
-            <div>
-              <p className="font-bold text-gray-900">{record.customerName}</p>
-              <p className="text-sm text-gray-500">תיק #{record.caseNumber}</p>
-              <p className="text-xs text-gray-400 mt-1">
-                {new Date(record.collectedAt).toLocaleDateString('he-IL')}
-                {record.collectedBy && ` • ${record.collectedBy}`}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <p className="font-bold text-emerald-600">{formatCurrency(record.collectedAmount)}</p>
-              {['manager', 'accountant', 'admin'].includes(userRole || '') && (
-                <button
-                  onClick={() => onUnmarkCollection(record.caseNumber, record.customerName)}
-                  className="px-3 py-1 text-sm border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-                  title="בטל גבייה זו"
-                >
-                  בטל גבייה
-                </button>
+      {/* Grouped Customers */}
+      <div className="space-y-1">
+        {customerNames.map((customerName) => {
+          const customerRecords = groupedByCustomer[customerName];
+          const customerTotal = customerRecords.reduce((sum, r) => sum + r.collectedAmount, 0);
+          const isExpanded = expandedCustomers[customerName] || false;
+
+          return (
+            <div key={customerName} className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+              {/* Header */}
+              <button
+                onClick={() =>
+                  setExpandedCustomers((prev: Record<string, boolean>) => ({
+                    ...prev,
+                    [customerName]: !prev[customerName],
+                  }))
+                }
+                className="w-full px-3 py-2 flex items-center justify-between hover:bg-gray-50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <div className="min-w-0">
+                    <p className="font-bold text-gray-900 text-sm truncate">{customerName}</p>
+                    <p className="text-xs text-right text-gray-500 leading-tight">
+                      {customerRecords.length} תיקים
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 ml-2">
+                  <span className="font-bold text-gray-900 text-sm whitespace-nowrap">{formatCurrency(customerTotal)}</span>
+                  {isExpanded ? (
+                    <ChevronUp className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 text-gray-600 flex-shrink-0" />
+                  )}
+                </div>
+              </button>
+
+              {/* Expanded Content */}
+              {isExpanded && (
+                <div className="bg-gray-50 border-t border-gray-100">
+                  {customerRecords.map((record, index) => (
+                    <div
+                      key={`${record.caseNumber}-${index}`}
+                      className={`px-3 py-2 flex items-center justify-between text-xs ${
+                        index !== customerRecords.length - 1 ? 'border-b border-gray-100' : ''
+                      }`}
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-gray-900 text-xs">תיק #{record.caseNumber}</p>
+                          {record.isPartial && (
+                            <span className="px-1.5 py-0.5 bg-amber-100 text-amber-700 rounded text-xs font-medium">
+                              חלקית
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-500 text-xs leading-tight">
+                          {new Date(record.collectedAt).toLocaleDateString('he-IL')}
+                          {record.collectedBy && ` • ${record.collectedBy}`}
+                        </p>
+                        {record.notes && (
+                          <p className="text-amber-600 text-xs mt-1 italic border-r-2 border-amber-300 pr-2">
+                            💬 {record.notes}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-0.5 ml-2">
+                        <p className="font-bold text-gray-900 whitespace-nowrap text-xs">{formatCurrency(record.collectedAmount)}</p>
+                        {['manager', 'accountant', 'admin'].includes(userRole || '') && (
+                          <button
+                            onClick={() => onUnmarkCollection(record.caseNumber, record.customerName)}
+                            className="px-1 py-0.5 text-xs border border-gray-300 text-gray-600 rounded hover:bg-gray-100 transition-colors whitespace-nowrap"
+                            title="בטל גבייה - החזר לדף הגבייה הרגיל"
+                          >
+                            בטל
+                          </button>
+                        )}
+                        {userRole === 'admin' && (
+                          <button
+                            onClick={() => onDeleteCollection(record.caseNumber, record.customerName)}
+                            className="px-1 py-0.5 text-xs border border-red-200 text-red-600 rounded hover:bg-red-50 transition-colors whitespace-nowrap flex items-center gap-0.5"
+                            title="מחק גבייה זו סופית"
+                          >
+                            <X className="w-2.5 h-2.5" />
+                            מחק
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
@@ -474,19 +588,36 @@ function CustomerDetail({
                     </div>
                   ))}
                 </div>
+
+                {caseItem.partialRecord && (
+                  <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-xl text-sm" dir="rtl">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-semibold text-amber-800">⚠️ גבייה חלקית</span>
+                      <span className="font-bold text-amber-700">
+                        שולם: {formatCurrency(caseItem.partialRecord.collectedAmount)}
+                      </span>
+                    </div>
+                    {caseItem.partialRecord.notes && (
+                      <p className="text-amber-700 text-xs mt-1 border-r-2 border-amber-300 pr-2">
+                        💬 {caseItem.partialRecord.notes}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <button
                   onClick={() => onOpenCollectionModal(caseItem, customer.customerName)}
                   disabled={markingCase === caseItem.caseNumber}
-                  className="w-full py-3 bg-emerald-500 text-white rounded-xl font-bold hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-2 px-3 bg-emerald-500 text-white rounded-lg text-sm font-medium hover:bg-emerald-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {markingCase === caseItem.caseNumber ? (
                     <>
-                      <Loader2 className="h-5 w-5 animate-spin" />
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       מסמן...
                     </>
                   ) : (
                     <>
-                      <CheckCircle className="h-5 w-5" />
+                      <CheckCircle className="h-4 w-4" />
                       סמן כנגבה
                     </>
                   )}
@@ -542,6 +673,11 @@ export function CollectionModuleView({
   onUnmarkCollection,
   onCancelUnmark,
   onConfirmUnmark,
+  deleteModal,
+  deleting,
+  onDeleteCollection,
+  onCancelDelete,
+  onConfirmDelete,
 }: CollectionModuleViewProps) {
   const customer = selectedCustomer
     ? customers.find((c) => c.customerName === selectedCustomer)
@@ -586,88 +722,107 @@ export function CollectionModuleView({
           </div>
         )}
 
-        {/* Upload & Filter Buttons */}
-        <div className="mb-6">
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {canUpload && (
-              <>
-                <button
-                  onClick={() => onSelectUploadMode('replace')}
-                  className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
-                    uploadMode === 'replace'
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  עדכון גבייה (דריסה)
-                </button>
-                <button
-                  onClick={() => onSelectUploadMode('append')}
-                  className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
-                    uploadMode === 'append'
-                      ? 'bg-emerald-600 text-white border-emerald-600'
-                      : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                  }`}
-                >
-                  הוספת תיקים חדשים
-                </button>
-              </>
-            )}
-            {userRole !== 'sales_agent' && (
-              <button
-                onClick={onToggleRecentCollected}
-                className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
-                  showRecentCollected
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <span className="flex items-center gap-2">
-                  <History className="h-4 w-4" />
-                  גבייה בחודש האחרון
-                </span>
-              </button>
-            )}
-          </div>
-
-          {/* Upload Section - shows when mode is selected */}
-          {canUpload && uploadMode && (
-            <div className="mt-4">
-              <UploadSection
-                title={uploadMode === 'replace' ? 'עדכון גבייה (דריסה)' : 'הוספת תיקים חדשים'}
-                description={
-                  uploadMode === 'replace'
-                    ? 'הקובץ יחליף את כל נתוני הגבייה הקיימים'
-                    : 'רק תיקים חדשים יתווספו, תיקים קיימים ידולגו'
+        {/* Tabs */}
+        <div className="mb-6 flex items-center justify-center gap-2">
+          <button
+            onClick={() => {
+              if (showRecentCollected) {
+                onToggleRecentCollected();
+              }
+            }}
+            className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+              !showRecentCollected
+                ? 'bg-blue-600 text-white shadow-lg'
+                : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            גבייה
+          </button>
+          {userRole !== 'sales_agent' && (
+            <button
+              onClick={() => {
+                if (!showRecentCollected) {
+                  onToggleRecentCollected();
                 }
-                onCancel={() => onSelectUploadMode(null)}
-                file={file}
-                uploading={uploading}
-                uploadResult={uploadResult}
-                dragActive={dragActive}
-                fileInputRef={fileInputRef}
-                onDrag={onDrag}
-                onDrop={onDrop}
-                onFileSelect={onFileSelect}
-                onUpload={onUpload}
-                onClearFile={onClearFile}
-              />
-            </div>
-          )}
-
-          {/* Date filter - shows when recent collected is enabled */}
-          {showRecentCollected && (
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <label className="text-sm text-gray-600">מתאריך:</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => onDateFromChange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+              }}
+              className={`px-6 py-2 rounded-lg font-semibold transition-all flex items-center gap-2 ${
+                showRecentCollected
+                  ? 'bg-blue-600 text-white shadow-lg'
+                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <History className="h-4 w-4" />
+              גבייה בחודש האחרון
+            </button>
           )}
         </div>
+
+        {/* Upload & Filter Buttons - show only in Collection tab */}
+        {!showRecentCollected ? (
+          <div className="mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              {canUpload && (
+                <>
+                  <button
+                    onClick={() => onSelectUploadMode('replace')}
+                    className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
+                      uploadMode === 'replace'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    עדכון גבייה (דריסה)
+                  </button>
+                  <button
+                    onClick={() => onSelectUploadMode('append')}
+                    className={`px-4 py-2 rounded-xl font-semibold shadow-sm transition-all border ${
+                      uploadMode === 'append'
+                        ? 'bg-emerald-600 text-white border-emerald-600'
+                        : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    הוספת תיקים חדשים
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Upload Section - shows when mode is selected */}
+            {canUpload && uploadMode && (
+              <div className="mt-4">
+                <UploadSection
+                  title={uploadMode === 'replace' ? 'עדכון גבייה (דריסה)' : 'הוספת תיקים חדשים'}
+                  description={
+                    uploadMode === 'replace'
+                      ? 'הקובץ יחליף את כל נתוני הגבייה הקיימים'
+                      : 'רק תיקים חדשים יתווספו, תיקים קיימים ידולגו'
+                  }
+                  onCancel={() => onSelectUploadMode(null)}
+                  file={file}
+                  uploading={uploading}
+                  uploadResult={uploadResult}
+                  dragActive={dragActive}
+                  fileInputRef={fileInputRef}
+                  onDrag={onDrag}
+                  onDrop={onDrop}
+                  onFileSelect={onFileSelect}
+                  onUpload={onUpload}
+                  onClearFile={onClearFile}
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="mb-6 flex items-center justify-center gap-3">
+            <label className="text-sm text-gray-600">מתאריך:</label>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={(e) => onDateFromChange(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+        )}
 
         {loading ? (
           <div className="min-h-[300px] flex items-center justify-center">
@@ -685,6 +840,7 @@ export function CollectionModuleView({
                 dateFrom={dateFrom}
                 userRole={userRole}
                 onUnmarkCollection={onUnmarkCollection}
+                onDeleteCollection={onDeleteCollection}
               />
             </div>
           </div>
@@ -774,7 +930,66 @@ export function CollectionModuleView({
           </div>
         </div>
       )}
+
+      {/* Delete Collection Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4" dir="rtl">
+          <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-md w-full">
+            <div className="bg-gradient-to-r from-red-100 to-red-50 p-6 border-b border-red-200">
+              <h2 className="text-xl font-bold text-gray-900 text-center">
+                מחק גבייה סופית
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-red-50 border border-red-300 rounded-lg p-4">
+                <p className="text-sm text-gray-700">
+                  אתה עומד למחוק סופית את הגבייה של:
+                </p>
+                <p className="font-bold text-gray-900 mt-2">{deleteModal.customerName}</p>
+                <p className="text-sm text-gray-600">תיק #{deleteModal.caseNumber}</p>
+              </div>
+
+              <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                <p className="text-xs text-red-700 font-semibold">⚠️ אזהרה</p>
+                <p className="text-sm text-red-700 mt-1">
+                  פעולה זו אינה ניתנת לביטול. הגבייה תימחק לצמיתות ממסד הנתונים.
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-600 text-center">
+                האם אתה בטוח שברצונך להמשיך?
+              </p>
+            </div>
+
+            <div className="bg-gray-50 px-6 py-4 flex gap-3">
+              <button
+                onClick={onCancelDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 border-2 border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors"
+              >
+                ביטול
+              </button>
+              <button
+                onClick={onConfirmDelete}
+                disabled={deleting}
+                className="flex-1 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    מוחק...
+                  </>
+                ) : (
+                  'אישור - מחק סופית'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
 

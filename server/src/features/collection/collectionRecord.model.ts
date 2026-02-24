@@ -7,6 +7,7 @@ export interface ICollectionRecord extends Document {
   collectedAt: Date;
   collectedBy: string;
   notes?: string;
+  isPartial: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +42,10 @@ const collectionRecordSchema = new Schema<ICollectionRecord>(
       type: String,
       trim: true,
       default: '',
+    },
+    isPartial: {
+      type: Boolean,
+      default: false,
     },
   },
   {

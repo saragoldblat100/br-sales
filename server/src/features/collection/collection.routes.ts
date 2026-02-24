@@ -101,6 +101,11 @@ function calculateUrgency(expectedDate: Date | null): {
 router.get(
   '/',
   asyncHandler(async (_req: Request, res: Response) => {
+    // Disable caching to ensure fresh data after updates
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+
     // Get all collection data from database
     const collectionData = await CollectionData.find({}).lean();
 
@@ -118,16 +123,33 @@ router.get(
 
     // Get all collected cases from database
     const collectedRecords = await CollectionRecord.find({}).lean();
-    const collectedCaseKeys = new Set(
-      collectedRecords.map((r) => `${r.customerName}|${r.caseNumber}`)
+    // Only fully collected cases should be filtered out from the collection list
+    const fullyCastedCaseKeys = new Set(
+      collectedRecords
+        .filter((r) => !r.isPartial)
+        .map((r) => `${r.customerName}|${r.caseNumber}`)
     );
 
-    // Filter out collected cases and add urgency
+    // Build a map of partial records for easy lookup in UI
+    const partialRecordsMap = new Map<string, { collectedAmount: number; notes: string }>();
+    collectedRecords
+      .filter((r) => r.isPartial)
+      .forEach((r) => {
+        partialRecordsMap.set(`${r.customerName}|${r.caseNumber}`, {
+          collectedAmount: r.collectedAmount,
+          notes: r.notes || '',
+        });
+      });
+
+    // Filter out fully collected cases and add urgency
     const customers = collectionData
       .map((customer) => {
-        const uncollectedCases = customer.cases.filter(
-          (c) => !collectedCaseKeys.has(`${customer.customerName}|${c.caseNumber}`)
-        );
+        const uncollectedCases = customer.cases
+          .filter((c) => !fullyCastedCaseKeys.has(`${customer.customerName}|${c.caseNumber}`))
+          .map((c) => {
+            const partialRecord = partialRecordsMap.get(`${customer.customerName}|${c.caseNumber}`) || null;
+            return { ...c, partialRecord };
+          });
 
         // Recalculate totals for uncollected cases only
         const totalAmount = uncollectedCases.reduce((sum, c) => sum + c.caseTotal, 0);
@@ -190,7 +212,6 @@ router.post(
   asyncHandler(async (req: Request, res: Response) => {
     const multerReq = req as MulterRequest;
     if (!multerReq.file) {
-      console.log('No file in request after multer');
       res.status(400).json({
         success: false,
         message: 'No file uploaded',
@@ -441,8 +462,9 @@ router.post(
   '/mark-collected',
   authorize(['sales_agent', 'manager', 'accountant', 'admin']),
   asyncHandler(async (req: Request, res: Response) => {
-    const { caseNumber, customerName, collectedAmount, collectedBy } = req.body;
+    const { caseNumber, customerName, collectedAmount, collectedBy, note } = req.body;
 
+    // Validation: Required fields
     if (!caseNumber || !customerName) {
       res.status(400).json({
         success: false,
@@ -451,14 +473,51 @@ router.post(
       return;
     }
 
+    // Validation: collectedAmount must be a positive number
+    const parsedAmount = Number(collectedAmount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      res.status(400).json({
+        success: false,
+        message: 'סכום הגבייה חייב להיות מספר חיובי',
+      });
+      return;
+    }
+
+    // Validation: Limit note length to 1000 characters
+    const trimmedNote = note ? String(note).trim().substring(0, 1000) : '';
+
+    // Get the case from collection data to determine if it's partial payment
+    const collectionData = await CollectionData.findOne({ customerName });
+    if (!collectionData) {
+      res.status(404).json({
+        success: false,
+        message: 'לקוח לא נמצא במערכת',
+      });
+      return;
+    }
+
+    const caseData = collectionData.cases.find((c) => c.caseNumber === caseNumber);
+    if (!caseData) {
+      res.status(404).json({
+        success: false,
+        message: 'תיק לא נמצא עבור לקוח זה',
+      });
+      return;
+    }
+
+    const caseTotal = caseData.caseTotalWithVAT || 0;
+    const isPartialPayment = parsedAmount < caseTotal;
+
     const record = await CollectionRecord.findOneAndUpdate(
       { caseNumber, customerName },
       {
         caseNumber,
         customerName,
-        collectedAmount: collectedAmount || 0,
+        collectedAmount: parsedAmount,
         collectedBy: collectedBy || '',
         collectedAt: new Date(),
+        notes: trimmedNote,
+        isPartial: isPartialPayment,
       },
       { upsert: true, new: true }
     );
@@ -469,13 +528,15 @@ router.post(
       activityService.log(authReq.user.id, authReq.user.username, 'collection_mark', {
         caseNumber,
         customerName,
-        collectedAmount: collectedAmount || 0,
+        collectedAmount: parsedAmount,
+        isPartial: isPartialPayment,
+        note: trimmedNote,
       });
     }
 
     res.json({
       success: true,
-      message: 'התיק סומן כנגבה',
+      message: isPartialPayment ? 'גבייה חלקית נשמרה בהצלחה' : 'התיק סומן כנגבה',
       record,
     });
   })
@@ -509,6 +570,50 @@ router.post(
 );
 
 /**
+ * POST /api/collection/delete-collected - Delete a collected case permanently
+ * Access: Admin only
+ */
+router.post(
+  '/delete-collected',
+  authorize(['admin']),
+  asyncHandler(async (req: Request, res: Response) => {
+    const { caseNumber, customerName } = req.body;
+
+    if (!caseNumber || !customerName) {
+      res.status(400).json({
+        success: false,
+        message: 'חסרים פרטי תיק או לקוח',
+      });
+      return;
+    }
+
+    const deleted = await CollectionRecord.findOneAndDelete({ caseNumber, customerName });
+
+    if (!deleted) {
+      res.status(404).json({
+        success: false,
+        message: 'הגבייה לא נמצאה',
+      });
+      return;
+    }
+
+    // Log activity
+    const authReq = req as AuthenticatedRequest;
+    if (authReq.user) {
+      activityService.log(authReq.user.id, authReq.user.username, 'collection_delete', {
+        caseNumber,
+        customerName,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'הגבייה נמחקה בהצלחה',
+    });
+  })
+);
+
+/**
  * GET /api/collection/stats - Get collection statistics
  * Access: Manager and Accountant only
  */
@@ -516,14 +621,16 @@ router.get(
   '/stats',
   authorize(['manager', 'accountant', 'admin']),
   asyncHandler(async (_req: Request, res: Response) => {
-    const records = await CollectionRecord.find({}).lean();
+    // Get all records (both partial and full)
+    const allRecords = await CollectionRecord.find({}).lean();
 
-    const totalCollected = records.reduce((sum, r) => sum + r.collectedAmount, 0);
-    const totalCases = records.length;
+    // Calculate totals including both partial and full collections
+    const totalCollected = allRecords.reduce((sum, r) => sum + r.collectedAmount, 0);
+    const totalCases = allRecords.length;
 
-    // Group by date
+    // Group by date (for all records to show statistics)
     const byDate: Record<string, { count: number; amount: number }> = {};
-    records.forEach((r) => {
+    allRecords.forEach((r) => {
       const date = new Date(r.collectedAt).toLocaleDateString('he-IL');
       if (!byDate[date]) {
         byDate[date] = { count: 0, amount: 0 };
@@ -536,7 +643,7 @@ router.get(
       success: true,
       totalCollected,
       totalCases,
-      records,
+      records: allRecords,
       byDate,
     });
   })

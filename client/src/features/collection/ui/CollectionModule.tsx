@@ -51,6 +51,14 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
   }>({ isOpen: false, caseNumber: '', customerName: '' });
   const [unmarking, setUnmarking] = useState(false);
 
+  // Delete collection state
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    caseNumber: string;
+    customerName: string;
+  }>({ isOpen: false, caseNumber: '', customerName: '' });
+  const [deleting, setDeleting] = useState(false);
+
   useEffect(() => {
     fetchCollectionData();
   }, []);
@@ -94,7 +102,7 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
     setCollectionModal({ isOpen: false, caseItem: null, customerName: '' });
   };
 
-  const markCaseAsCollected = async (collectedAmount: number) => {
+  const markCaseAsCollected = async (collectedAmount: number, note?: string) => {
     const { caseItem, customerName } = collectionModal;
     if (!caseItem || !customerName) return;
 
@@ -104,7 +112,8 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
         caseItem.caseNumber,
         customerName,
         collectedAmount,
-        user?.name || user?.username || ''
+        user?.name || user?.username || '',
+        note
       );
 
       if (result.success) {
@@ -120,8 +129,16 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
       } else {
         alert(result.message || 'שגיאה בסימון הגבייה');
       }
-    } catch {
-      alert('שגיאה בהתחברות לשרת');
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        alert('אין לך הרשאה לסימון גבייה');
+      } else if (error.response?.status === 404) {
+        alert('התיק או הלקוח לא נמצא במערכת');
+      } else if (error.response?.status === 400) {
+        alert(error.response?.data?.message || 'נתונים לא תקינים');
+      } else {
+        alert('שגיאה בהתחברות לשרת');
+      }
     } finally {
       setMarkingCase(null);
     }
@@ -160,10 +177,55 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
       } else {
         alert(result.message || 'שגיאה בביטול הגבייה');
       }
-    } catch {
-      alert('שגיאה בהתחברות לשרת');
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        alert('אין לך הרשאה לביטול גבייה');
+      } else if (error.response?.status === 404) {
+        alert('הגבייה לא נמצאה');
+      } else {
+        alert('שגיאה בהתחברות לשרת');
+      }
     } finally {
       setUnmarking(false);
+    }
+  };
+
+  const handleDeleteCollection = (caseNumber: string, customerName: string) => {
+    setDeleteModal({ isOpen: true, caseNumber, customerName });
+  };
+
+  const confirmDeleteCollection = async () => {
+    const { caseNumber, customerName } = deleteModal;
+    if (!caseNumber || !customerName) return;
+
+    setDeleting(true);
+    try {
+      const result = await collectionApi.deleteCollected(caseNumber, customerName);
+
+      if (result.success) {
+        setDeleteModal({ isOpen: false, caseNumber: '', customerName: '' });
+        // Refresh the collection data
+        await fetchCollectionData();
+
+        // Refresh stats if showing recent collected
+        if (showRecentCollected) {
+          await fetchStats();
+        }
+
+        alert('הגבייה נמחקה בהצלחה');
+      } else {
+        alert(result.message || 'שגיאה במחיקת הגבייה');
+      }
+    } catch (error: any) {
+      if (error.response?.status === 403) {
+        alert('אין לך הרשאה למחיקת גבייה');
+      } else if (error.response?.status === 404) {
+        alert('הגבייה לא נמצאה');
+      } else {
+        alert('שגיאה בהתחברות לשרת');
+      }
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -328,6 +390,11 @@ export function CollectionModule({ user, onBack, onLogout, canUpload }: Collecti
       onCancelUnmark={() => setUnmarkModal({ isOpen: false, caseNumber: '', customerName: '' })}
       onConfirmUnmark={confirmUnmarkCollection}
       unmarking={unmarking}
+      deleteModal={deleteModal}
+      deleting={deleting}
+      onDeleteCollection={handleDeleteCollection}
+      onCancelDelete={() => setDeleteModal({ isOpen: false, caseNumber: '', customerName: '' })}
+      onConfirmDelete={confirmDeleteCollection}
     />
   );
 }

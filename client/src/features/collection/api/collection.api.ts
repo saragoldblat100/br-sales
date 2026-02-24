@@ -19,6 +19,10 @@ export interface CollectionCase {
   items: CollectionItem[];
   caseTotal: number;
   caseTotalWithVAT: number;
+  partialRecord?: {
+    collectedAmount: number;
+    notes: string;
+  } | null;
 }
 
 export interface CollectionCustomer {
@@ -57,6 +61,8 @@ export interface CollectionStatsResponse {
     collectedAmount: number;
     collectedAt: string;
     collectedBy: string;
+    notes?: string;
+    isPartial?: boolean;
   }>;
   byDate: Record<string, { count: number; amount: number }>;
 }
@@ -102,13 +108,15 @@ export const collectionApi = {
     caseNumber: string,
     customerName: string,
     collectedAmount: number,
-    collectedBy: string
+    collectedBy: string,
+    note?: string
   ): Promise<{ success: boolean; message: string }> {
     const response = await api.post('/collection/mark-collected', {
       caseNumber,
       customerName,
       collectedAmount,
       collectedBy,
+      note,
     });
     return response.data;
   },
@@ -121,6 +129,20 @@ export const collectionApi = {
     customerName: string
   ): Promise<{ success: boolean; message: string }> {
     const response = await api.post('/collection/unmark-collected', {
+      caseNumber,
+      customerName,
+    });
+    return response.data;
+  },
+
+  /**
+   * Delete a collected case permanently
+   */
+  async deleteCollected(
+    caseNumber: string,
+    customerName: string
+  ): Promise<{ success: boolean; message: string }> {
+    const response = await api.post('/collection/delete-collected', {
       caseNumber,
       customerName,
     });

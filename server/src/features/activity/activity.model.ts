@@ -4,6 +4,7 @@ export type ActivityEventType =
   | 'login'
   | 'logout'
   | 'collection_mark'
+  | 'collection_delete'
   | 'inventory_sold'
   | 'order_create'
   | 'order_status_update'
@@ -42,6 +43,7 @@ const activityLogSchema = new Schema<IActivityLog>(
         'login',
         'logout',
         'collection_mark',
+        'collection_delete',
         'inventory_sold',
         'order_create',
         'order_status_update',
