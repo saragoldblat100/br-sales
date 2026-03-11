@@ -1,6 +1,33 @@
 import { ArrowRight, Search, Loader2, X, AlertTriangle, Calculator } from 'lucide-react';
 import type { PricingCalcResult, SearchItem } from '../api/pricing.api';
 import type { PricingOverrides } from './PricingModule';
+import { MultiSKUPricingSection } from './MultiSKUPricingSection';
+import type { MultiSKURow } from '../hooks/useMultiSKUPricing';
+
+interface MultiSKUProps {
+  rows: MultiSKURow[];
+  fromQuery: string;
+  toQuery: string;
+  fromResults: SearchItem[];
+  toResults: SearchItem[];
+  fromSearching: boolean;
+  toSearching: boolean;
+  fromItem: SearchItem | null;
+  toItem: SearchItem | null;
+  showFromDropdown: boolean;
+  showToDropdown: boolean;
+  onSetFromQuery: (q: string) => void;
+  onSetToQuery: (q: string) => void;
+  onSelectFrom: (item: SearchItem) => void;
+  onSelectTo: (item: SearchItem) => void;
+  onSetShowFromDropdown: (show: boolean) => void;
+  onSetShowToDropdown: (show: boolean) => void;
+  onAddRange: () => void;
+  onOverrideChange: (rowId: string, field: keyof PricingOverrides, value: string) => void;
+  onCalculateRow: (rowId: string) => void;
+  onResetRow: (rowId: string) => void;
+  onDeleteRow: (rowId: string) => void;
+}
 
 interface PricingModuleViewProps {
   searchQuery: string;
@@ -19,6 +46,7 @@ interface PricingModuleViewProps {
   onOverrideChange: (field: keyof PricingOverrides, value: string) => void;
   onRecalculate: () => void;
   onReset: () => void;
+  multiSKUProps: MultiSKUProps;
 }
 
 export function PricingModuleView({
@@ -38,12 +66,13 @@ export function PricingModuleView({
   onOverrideChange,
   onRecalculate,
   onReset,
+  multiSKUProps,
 }: PricingModuleViewProps) {
   const chain = result?.pricingChain;
   const item = result?.item;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-100 via-blue-50 to-gray-100 p-6" dir="rtl">
+    <div className="min-h-screen bg-gradient-to-b from-blue-100 via-blue-50 to-gray-100 p-6 flex flex-col" dir="rtl">
       {/* Back button */}
       <button
         onClick={onBack}
@@ -53,12 +82,15 @@ export function PricingModuleView({
         <span className="font-medium">חזרה</span>
       </button>
 
-      <div className="max-w-5xl mx-auto pt-8">
+      <div className="max-w-5xl mx-auto pt-8 flex-1">
         {/* Logo */}
         <div className="text-center mb-6">
           <img src="/logoBravo.svg" alt="Bravo Logo" className="h-20 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800">מחשבון תמחור</h1>
         </div>
+
+        {/* Single Item Section */}
+        <h2 className="text-lg font-bold text-gray-800 mb-4">חישוב מחיר לפריט יחיד</h2>
 
         {/* Search */}
         <div className="relative max-w-lg mx-auto mb-8">
@@ -314,19 +346,39 @@ export function PricingModuleView({
           </div>
         )}
 
-        {/* Empty state */}
-        {!selectedItem && !calcLoading && (
-          <div className="text-center py-16 text-gray-400">
-            <Search className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p className="text-lg font-medium">חפש פריט כדי להתחיל</p>
-            <p className="text-sm mt-1">הקלד שם פריט או מק״ט בשדה החיפוש</p>
-          </div>
-        )}
 
-        {/* Footer */}
-        <div className="text-center text-sm text-gray-400 mt-8 pb-6">
-          <p>כל הזכויות שמורות - בראבו מערכות {new Date().getFullYear()} &copy;</p>
-        </div>
+
+        {/* Multi-SKU Section */}
+        <MultiSKUPricingSection
+          rows={multiSKUProps.rows}
+          fromQuery={multiSKUProps.fromQuery}
+          toQuery={multiSKUProps.toQuery}
+          fromResults={multiSKUProps.fromResults}
+          toResults={multiSKUProps.toResults}
+          fromSearching={multiSKUProps.fromSearching}
+          toSearching={multiSKUProps.toSearching}
+          fromItem={multiSKUProps.fromItem}
+          toItem={multiSKUProps.toItem}
+          showFromDropdown={multiSKUProps.showFromDropdown}
+          showToDropdown={multiSKUProps.showToDropdown}
+          onSetFromQuery={multiSKUProps.onSetFromQuery}
+          onSetToQuery={multiSKUProps.onSetToQuery}
+          onSelectFrom={multiSKUProps.onSelectFrom}
+          onSelectTo={multiSKUProps.onSelectTo}
+          onSetShowFromDropdown={multiSKUProps.onSetShowFromDropdown}
+          onSetShowToDropdown={multiSKUProps.onSetShowToDropdown}
+          onAddRange={multiSKUProps.onAddRange}
+          onOverrideChange={multiSKUProps.onOverrideChange}
+          onCalculateRow={multiSKUProps.onCalculateRow}
+          onResetRow={multiSKUProps.onResetRow}
+          onDeleteRow={multiSKUProps.onDeleteRow}
+        />
+
+      </div>
+
+      {/* Footer - Sticky to Bottom */}
+      <div className="text-center text-sm text-gray-400 py-6 border-t border-gray-200/50">
+        <p>כל הזכויות שמורות - בראבו מערכות {new Date().getFullYear()} &copy;</p>
       </div>
     </div>
   );

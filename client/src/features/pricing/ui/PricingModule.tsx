@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { pricingApi, type PricingCalcResult, type SearchItem } from '../api/pricing.api';
 import { PricingModuleView } from './PricingModuleView';
+import { useMultiSKUPricing } from '../hooks/useMultiSKUPricing';
 
 interface PricingModuleProps {
   onBack: () => void;
@@ -16,11 +17,12 @@ export interface PricingOverrides {
   qtyPerCarton: string;
 }
 
-const EMPTY_OVERRIDES: PricingOverrides = {
+export const EMPTY_OVERRIDES: PricingOverrides = {
   supplierPrice: '', freight: '', margin: '', bankRate: '', usdRate: '', boxCBM: '', qtyPerCarton: '',
 };
 
 export function PricingModule({ onBack }: PricingModuleProps) {
+  // Single item state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
   const [searching, setSearching] = useState(false);
@@ -34,6 +36,9 @@ export function PricingModule({ onBack }: PricingModuleProps) {
   const [overrides, setOverrides] = useState<PricingOverrides>(EMPTY_OVERRIDES);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Multi-SKU hook
+  const multiSKU = useMultiSKUPricing();
 
   // Search with debounce
   const handleSearchChange = useCallback((query: string) => {
@@ -177,6 +182,30 @@ export function PricingModule({ onBack }: PricingModuleProps) {
       onOverrideChange={handleOverrideChange}
       onRecalculate={handleRecalculate}
       onReset={handleReset}
+      multiSKUProps={{
+        rows: multiSKU.rows,
+        fromQuery: multiSKU.fromQuery,
+        toQuery: multiSKU.toQuery,
+        fromResults: multiSKU.fromResults,
+        toResults: multiSKU.toResults,
+        fromSearching: multiSKU.fromSearching,
+        toSearching: multiSKU.toSearching,
+        fromItem: multiSKU.fromItem,
+        toItem: multiSKU.toItem,
+        showFromDropdown: multiSKU.showFromDropdown,
+        showToDropdown: multiSKU.showToDropdown,
+        onSetFromQuery: multiSKU.setFromQuery,
+        onSetToQuery: multiSKU.setToQuery,
+        onSelectFrom: multiSKU.onSelectFrom,
+        onSelectTo: multiSKU.onSelectTo,
+        onSetShowFromDropdown: multiSKU.setShowFromDropdown,
+        onSetShowToDropdown: multiSKU.setShowToDropdown,
+        onAddRange: multiSKU.onAddRange,
+        onOverrideChange: multiSKU.updateRowOverride,
+        onCalculateRow: multiSKU.calculateRow,
+        onResetRow: multiSKU.resetRow,
+        onDeleteRow: multiSKU.deleteRow,
+      }}
     />
   );
 }
