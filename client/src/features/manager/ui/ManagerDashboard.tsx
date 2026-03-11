@@ -19,7 +19,7 @@ const MODULES: ManagerModule[] = [
   },
   {
     id: 'collection',
-    title: 'גבייה',
+    title: ' צפי גבייה',
     description: 'צפייה והעלאת נתוני גבייה',
     iconImage: '/icons/collection.svg',
     iconBgColor: 'bg-green-50',

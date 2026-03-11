@@ -18,7 +18,7 @@ export function useSalesMainMenu(user: UserProfile) {
     },
     {
       id: 'collection',
-      title: 'גבייה',
+      title: 'צפי גבייה',
       description: 'ניהול גבייה מלקוחות',
       iconImage: '/icons/collection.svg',
       iconBgColor: 'bg-green-50',
