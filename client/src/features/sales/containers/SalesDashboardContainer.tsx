@@ -7,6 +7,7 @@ import { useSalesDashboard } from '../logic/useSalesDashboard';
 import { CustomerSearch } from '@/features/customers';
 import { ItemSearch } from '@/features/items';
 import { Cart, OrdersModule } from '@/features/orders';
+import { TasksModule } from '@/features/tasks';
 
 export function SalesDashboardContainer() {
   const [showCartModal, setShowCartModal] = useState(false);
@@ -66,6 +67,10 @@ export function SalesDashboardContainer() {
 
   if (activeModule === 'orders') {
     return <OrdersModule onBack={handleBackToMenu} />;
+  }
+
+  if (activeModule === 'tasks') {
+    return <TasksModule onBack={handleBackToMenu} onLogout={handleLogout} />;
   }
 
   return (

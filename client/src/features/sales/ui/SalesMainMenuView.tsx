@@ -1,6 +1,6 @@
 import { LogOut } from 'lucide-react';
 
-export type SalesModuleId = 'sales' | 'collection' | 'inventory' | 'orders';
+export type SalesModuleId = 'sales' | 'collection' | 'inventory' | 'orders' | 'tasks';
 
 export interface SalesMenuModule {
   id: SalesModuleId;

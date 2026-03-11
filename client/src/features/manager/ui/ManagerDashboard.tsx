@@ -7,6 +7,7 @@ import { ManagerSalesModule } from './ManagerSalesModule';
 import { UsersModule } from '@/features/users';
 import { PricingModule } from '@/features/pricing';
 import { OrdersModule } from '@/features/orders';
+import { TasksModule } from '@/features/tasks';
 import { ManagerDashboardView, ComingSoonView, type ManagerModuleId, type ManagerModule } from './ManagerDashboardView';
 
 const MODULES: ManagerModule[] = [
@@ -66,6 +67,13 @@ const MODULES: ManagerModule[] = [
     iconImage: '/icons/orders.svg',
     iconBgColor: 'bg-rose-50',
   },
+  {
+    id: 'tasks',
+    title: 'משימות',
+    description: 'ניהול משימות הצוות',
+    iconImage: '/icons/tasks.svg',
+    iconBgColor: 'bg-amber-50',
+  },
 ];
 
 export function ManagerDashboard() {
@@ -118,6 +126,10 @@ export function ManagerDashboard() {
 
   if (activeModule === 'orders') {
     return <OrdersModule onBack={handleBack} />;
+  }
+
+  if (activeModule === 'tasks') {
+    return <TasksModule onBack={handleBack} onLogout={logout} />;
   }
 
   // Filter modules by role

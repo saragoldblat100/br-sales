@@ -17,6 +17,7 @@ import { collectionRoutes } from '@/features/collection';
 import { inventoryRoutes } from '@/features/inventory';
 import { activityRoutes } from '@/features/activity';
 import { userRoutes } from '@/features/users';
+import { taskRoutes } from '@/features/tasks';
 
 /**
  * Create and configure Express application
@@ -174,6 +175,7 @@ export const createApp = (): Application => {
   app.use('/api/inventory', inventoryRoutes);
   app.use('/api/activity', activityRoutes);
   app.use('/api/admin/users', userRoutes);
+  app.use('/api/tasks', taskRoutes);
 
   // ============================================
   // Error Handling

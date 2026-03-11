@@ -37,6 +37,13 @@ export function useSalesMainMenu(user: UserProfile) {
       iconImage: '/icons/orders.svg',
       iconBgColor: 'bg-rose-50',
     },
+    {
+      id: 'tasks',
+      title: 'משימות',
+      description: 'ניהול משימות הצוות',
+      iconImage: '/icons/tasks.svg',
+      iconBgColor: 'bg-amber-50',
+    },
   ];
 
   return {

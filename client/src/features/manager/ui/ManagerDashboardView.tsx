@@ -1,6 +1,6 @@
 import { LogOut, ArrowRight } from 'lucide-react';
 
-export type ManagerModuleId = 'collection' | 'inventory' | 'items' | 'reports' | 'sales' | 'users' | 'pricing' | 'orders' | null;
+export type ManagerModuleId = 'collection' | 'inventory' | 'items' | 'reports' | 'sales' | 'users' | 'pricing' | 'orders' | 'tasks' | null;
 
 export interface ManagerModule {
   id: ManagerModuleId;
