@@ -736,7 +736,7 @@ export function CollectionModuleView({
                 : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-50'
             }`}
           >
-            גבייה
+            צפי גבייה  
           </button>
           {userRole !== 'sales_agent' && (
             <button
