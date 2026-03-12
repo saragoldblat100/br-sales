@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { pricingApi, type PricingCalcResult, type SearchItem } from '../api/pricing.api';
+import { pricingApi, type PricingCalcResult, type SearchItem, type PartialPricingResult } from '../api/pricing.api';
 import { PricingOverrides, EMPTY_OVERRIDES } from '../ui/PricingModule';
 
 export interface MultiSKURow {
@@ -7,8 +7,8 @@ export interface MultiSKURow {
   selectedItem: SearchItem;
   overrides: PricingOverrides;
   originalOverrides: PricingOverrides;
-  result: PricingCalcResult | null;
-  originalResult: PricingCalcResult | null;
+  result: PricingCalcResult | PartialPricingResult | null;
+  originalResult: PricingCalcResult | PartialPricingResult | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -17,6 +17,14 @@ export function useMultiSKUPricing() {
   // Rows data
   const [rows, setRows] = useState<MultiSKURow[]>([]);
   const [addingRange, setAddingRange] = useState(false);
+
+  // Container freight management
+  const containerSizeCBM = 68;
+  const [currentContainerFreight, setCurrentContainerFreight] = useState<number | null>(null);
+  const [tempContainerFreight, setTempContainerFreight] = useState<number | null>(null);
+  const [freightInput, setFreightInput] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [feedbackType, setFeedbackType] = useState<'success' | 'error' | null>(null);
 
   // From SKU search
   const [fromQuery, setFromQuery] = useState('');
@@ -111,29 +119,29 @@ export function useMultiSKUPricing() {
 
     setAddingRange(true);
     try {
-      // Search items starting from the fromItem code to get a range
-      const searchResults = await pricingApi.searchItems(fromItem.itemCode);
-
-      // Filter to get items in the range (from <= itemCode <= to)
-      // Compare lexicographically/numerically
+      // Get items in the range using backend range query
       const fromCode = fromItem.itemCode;
       const toCode = toItem.itemCode;
       const isReversed = fromCode > toCode;
       const minCode = isReversed ? toCode : fromCode;
       const maxCode = isReversed ? fromCode : toCode;
 
-      let rangeItems = searchResults.filter(
-        item => item.itemCode >= minCode && item.itemCode <= maxCode
-      );
+      const rangeItems = await pricingApi.getItemsInRange(minCode, maxCode);
 
       // If no results in range, add both items at least
-      if (rangeItems.length === 0) {
-        rangeItems = [fromItem, toItem];
-      }
+      let itemsToAdd = rangeItems.length > 0 ? rangeItems : [fromItem, toItem];
 
-      // Dedup: don't add items that are already in the rows
+      // Dedup within itemsToAdd first (important when from==to and both items are the same)
+      const itemCodeSet = new Set<string>();
+      const dedupedItemsToAdd = itemsToAdd.filter(item => {
+        if (itemCodeSet.has(item.itemCode)) return false;
+        itemCodeSet.add(item.itemCode);
+        return true;
+      });
+
+      // Then dedup against existing rows
       const existingCodes = new Set(rows.map(r => r.selectedItem.itemCode));
-      const newItems = rangeItems.filter(item => !existingCodes.has(item.itemCode));
+      const newItems = dedupedItemsToAdd.filter(item => !existingCodes.has(item.itemCode));
 
       // Load full pricing data for each item
       const newRows: MultiSKURow[] = [];
@@ -142,15 +150,26 @@ export function useMultiSKUPricing() {
           // Load full item data with empty params to get defaults
           const pricingResult = await pricingApi.calculatePrice(item._id, {});
 
+          // Handle both full and partial results
+          const isPartial = 'partial' in pricingResult && pricingResult.partial;
+          const pricingChain = isPartial
+            ? pricingResult.partialPricingChain
+            : (pricingResult as any).pricingChain;
+
+          // Capture current container freight on first load (only for full results)
+          if (!isPartial && currentContainerFreight === null && 'freightCostPerContainer' in pricingChain) {
+            setCurrentContainerFreight((pricingChain as any).freightCostPerContainer);
+          }
+
           // Build original overrides from the pricing result
           const originalOv: PricingOverrides = {
-            supplierPrice: pricingResult.pricingChain.supplierPricePerCarton.toString(),
-            freight: pricingResult.pricingChain.freightCostPerCarton.toString(),
-            margin: pricingResult.pricingChain.marginPercentage.toString(),
-            usdRate: pricingResult.pricingChain.usdToIls.toString(),
+            supplierPrice: pricingChain.supplierPricePerCarton.toString(),
+            freight: pricingChain.freightCostPerCarton.toString(),
+            margin: pricingChain.marginPercentage.toString(),
+            usdRate: pricingChain.usdToIls.toString(),
             bankRate: '',
-            boxCBM: pricingResult.pricingChain.boxCBM.toString(),
-            qtyPerCarton: pricingResult.pricingChain.qtyPerCarton.toString(),
+            boxCBM: pricingChain.boxCBM.toString(),
+            qtyPerCarton: pricingChain.qtyPerCarton.toString(),
           };
 
           newRows.push({
@@ -161,7 +180,7 @@ export function useMultiSKUPricing() {
             result: pricingResult,
             originalResult: pricingResult,
             isLoading: false,
-            error: null,
+            error: null, // Partial results are expected, not errors
           });
         } catch (itemErr) {
           // If item data can't be loaded, still add it with empty overrides
@@ -173,7 +192,7 @@ export function useMultiSKUPricing() {
             result: null,
             originalResult: null,
             isLoading: false,
-            error: null,
+            error: 'שגיאה בטעינת נתוני הפריט',
           });
         }
       }
@@ -221,37 +240,83 @@ export function useMultiSKUPricing() {
         )
       );
 
-      // Build params from overrides (same pattern as PricingModule)
+      // Build params from overrides - only send if user actually changed the value
       const params: Record<string, number> = {};
-      if (row.overrides.supplierPrice !== '')
+
+      // Only send if user actually modified (differs from original)
+      if (row.overrides.supplierPrice !== row.originalOverrides.supplierPrice && row.overrides.supplierPrice !== '') {
         params.overrideSupplierPrice = parseFloat(row.overrides.supplierPrice);
-      if (row.overrides.freight !== '')
-        params.overrideFreight = parseFloat(row.overrides.freight);
-      if (row.overrides.margin !== '')
+      }
+
+      // Freight: check temporary override first, then user-modified value
+      if (tempContainerFreight !== null) {
+        params.overrideFreight = tempContainerFreight;
+      } else if (row.overrides.freight !== row.originalOverrides.freight && row.overrides.freight !== '') {
+        // User changed freight - convert per-carton to per-container
+        const freightPerCartonNum = parseFloat(row.overrides.freight);
+        const boxCBMNum = parseFloat(row.overrides.boxCBM || row.originalOverrides.boxCBM);
+        if (boxCBMNum > 0 && !isNaN(freightPerCartonNum)) {
+          const freightPerContainer = (freightPerCartonNum / boxCBMNum) * containerSizeCBM;
+          params.overrideFreight = freightPerContainer;
+        }
+      }
+
+      // Only send if user actually modified (differs from original)
+      if (row.overrides.margin !== row.originalOverrides.margin && row.overrides.margin !== '') {
         params.overrideMargin = parseFloat(row.overrides.margin);
-      if (row.overrides.usdRate !== '')
+      }
+      if (row.overrides.usdRate !== row.originalOverrides.usdRate && row.overrides.usdRate !== '') {
         params.overrideUsdRate = parseFloat(row.overrides.usdRate);
-      if (row.overrides.boxCBM !== '')
+      }
+      if (row.overrides.boxCBM !== row.originalOverrides.boxCBM && row.overrides.boxCBM !== '') {
         params.overrideBoxCBM = parseFloat(row.overrides.boxCBM);
-      if (row.overrides.qtyPerCarton !== '')
+      }
+      if (row.overrides.qtyPerCarton !== row.originalOverrides.qtyPerCarton && row.overrides.qtyPerCarton !== '') {
         params.overrideQtyPerCarton = parseFloat(row.overrides.qtyPerCarton);
+      }
 
       // Call API
       const result = await pricingApi.calculatePrice(row.selectedItem._id, params);
 
-      // Update with result
+      // Result may be partial (expected business case when data is missing) - not an error
+
+      // Update with result and sync freight display if temp freight was used
       setRows(prev =>
-        prev.map(r =>
-          r.id === rowId
-            ? { ...r, result, isLoading: false, error: null }
-            : r
-        )
+        prev.map(r => {
+          if (r.id !== rowId) return r;
+
+          // If tempContainerFreight was used, update displayed freight per-carton
+          let updatedRow = { ...r, result, isLoading: false, error: null };
+
+          if (tempContainerFreight !== null) {
+            const boxCBMNum = parseFloat(r.overrides.boxCBM || r.originalOverrides.boxCBM);
+            const freightPerCarton = (tempContainerFreight / containerSizeCBM) * boxCBMNum;
+            updatedRow = {
+              ...updatedRow,
+              overrides: {
+                ...updatedRow.overrides,
+                freight: freightPerCarton.toFixed(3),
+              },
+            };
+          }
+
+          return updatedRow;
+        })
       );
     } catch (err: unknown) {
       const axiosErr = err as any;
+
+      // Expected 400 with partial data is not an error - silently return
+      if (axiosErr?.response?.status === 400 && axiosErr?.response?.data?.partialPricingChain) {
+        return;
+      }
+
+      // Only log and show real errors (network, 500, etc.)
       const message =
         axiosErr?.response?.data?.message ||
         (err instanceof Error ? err.message : 'שגיאה בחישוב');
+
+      console.error('Pricing calculation error:', err);
 
       setRows(prev =>
         prev.map(r =>
@@ -261,35 +326,224 @@ export function useMultiSKUPricing() {
         )
       );
     }
-  }, [rows]);
+  }, [rows, tempContainerFreight, containerSizeCBM]);
 
   // Delete a row
   const deleteRow = useCallback((rowId: string) => {
     setRows(prev => prev.filter(r => r.id !== rowId));
   }, []);
 
-  // Reset a row to original values
-  const resetRow = useCallback((rowId: string) => {
+  // Reset a row to fresh system defaults from DB
+  const resetRow = useCallback(async (rowId: string) => {
+    const row = rows.find(r => r.id === rowId);
+    if (!row) return;
+
+    // Set loading state
     setRows(prev =>
       prev.map(r =>
-        r.id === rowId
-          ? {
-              ...r,
-              overrides: { ...r.originalOverrides },
-              result: r.originalResult,
-              error: null,
-              isLoading: false,
-            }
-          : r
+        r.id === rowId ? { ...r, isLoading: true, error: null } : r
       )
     );
-  }, []);
+
+    try {
+      // Fetch fresh data from DB with empty overrides
+      const result = await pricingApi.calculatePrice(
+        row.selectedItem._id,
+        {}
+      );
+
+      // Build fresh overrides from pricingChain (system defaults)
+      const pricingChain = 'partial' in result && result.partial
+        ? result.partialPricingChain
+        : (result as any).pricingChain;
+
+      const freshOverrides: PricingOverrides = {
+        supplierPrice: pricingChain.supplierPricePerCarton.toString(),
+        freight: pricingChain.freightCostPerCarton.toString(),
+        margin: pricingChain.marginPercentage.toString(),
+        usdRate: pricingChain.usdToIls.toString(),
+        bankRate: '',
+        boxCBM: pricingChain.boxCBM.toString(),
+        qtyPerCarton: pricingChain.qtyPerCarton.toString(),
+      };
+
+      // Update row with fresh data (partial results are expected business cases, not errors)
+      setRows(prev =>
+        prev.map(r =>
+          r.id === rowId
+            ? {
+                ...r,
+                overrides: freshOverrides,
+                originalOverrides: freshOverrides,
+                result: result,
+                originalResult: result,
+                isLoading: false,
+                error: null,
+              }
+            : r
+        )
+      );
+
+    } catch (err: unknown) {
+      const axiosErr = err as any;
+
+      // Expected 400 with partial data is not an error - silently return
+      if (axiosErr?.response?.status === 400 && axiosErr?.response?.data?.partialPricingChain) {
+        return;
+      }
+
+      // Only log and show real errors (network, 500, etc.)
+      const errorMsg =
+        axiosErr?.response?.data?.message ||
+        (err instanceof Error ? err.message : 'שגיאה באיפוס השורה');
+
+      console.error('Reset row error:', err);
+
+      setRows(prev =>
+        prev.map(r =>
+          r.id === rowId
+            ? {
+                ...r,
+                isLoading: false,
+                error: errorMsg,
+              }
+            : r
+        )
+      );
+    }
+  }, [rows]);
 
   // Cleanup debounce on unmount
   const cleanup = useCallback(() => {
     if (fromDebounceRef.current) clearTimeout(fromDebounceRef.current);
     if (toDebounceRef.current) clearTimeout(toDebounceRef.current);
   }, []);
+
+  // Apply temporary freight (affects next Calculate only)
+  const applyTempFreight = useCallback(() => {
+    const value = parseFloat(freightInput);
+    if (!isNaN(value) && value >= 0) {
+      setTempContainerFreight(value);
+      setFeedbackMessage('הובלה זמנית יושמה');
+      setFeedbackType('success');
+      setTimeout(() => {
+        setFeedbackMessage(null);
+        setFeedbackType(null);
+      }, 3000);
+    }
+  }, [freightInput]);
+
+  // Apply global freight (saves to DB and recalculates all rows immediately)
+  const applyGlobalFreight = useCallback(async () => {
+    const value = parseFloat(freightInput);
+    if (isNaN(value) || value < 0) return;
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(`האם אתה בטוח שברצונך לעדכן את מחיר ההובלה ל-$${value.toFixed(2)}?`);
+    if (!confirmed) {
+      setFeedbackMessage('ביטול עדכון');
+      setFeedbackType('error');
+      setTimeout(() => {
+        setFeedbackMessage(null);
+        setFeedbackType(null);
+      }, 2000);
+      return;
+    }
+
+    try {
+      await pricingApi.updateFreightRate({
+        freightCost: value,
+        containerSizeCBM: 68,
+        portOfOrigin: 'Shenzhen Yantian',
+      });
+
+      setCurrentContainerFreight(value);
+      setTempContainerFreight(null);
+      setFreightInput('');
+      setFeedbackMessage('הובלה עודכנה בהצלחה');
+      setFeedbackType('success');
+      setTimeout(() => {
+        setFeedbackMessage(null);
+        setFeedbackType(null);
+      }, 3000);
+
+      // Recalculate all rows with new container freight
+      const updatedRows = rows.map(r => {
+        // Calculate new freight per carton based on new container freight and current boxCBM
+        const boxCBMNum = parseFloat(r.overrides.boxCBM || r.originalOverrides.boxCBM);
+        const newFreightPerCarton = (value / containerSizeCBM) * boxCBMNum;
+
+        return {
+          ...r,
+          overrides: {
+            ...r.overrides,
+            freight: newFreightPerCarton.toFixed(3),
+          },
+          isLoading: true,
+        };
+      });
+
+      setRows(updatedRows);
+
+      // Recalculate each row in parallel
+      const recalcPromises = updatedRows.map(async (r) => {
+        try {
+          const params: Record<string, number> = {};
+          params.overrideFreight = value; // Use new container freight
+
+          // Add any user-modified overrides (that differ from original)
+          if (r.overrides.supplierPrice !== r.originalOverrides.supplierPrice && r.overrides.supplierPrice !== '') {
+            params.overrideSupplierPrice = parseFloat(r.overrides.supplierPrice);
+          }
+          if (r.overrides.margin !== r.originalOverrides.margin && r.overrides.margin !== '') {
+            params.overrideMargin = parseFloat(r.overrides.margin);
+          }
+          if (r.overrides.usdRate !== r.originalOverrides.usdRate && r.overrides.usdRate !== '') {
+            params.overrideUsdRate = parseFloat(r.overrides.usdRate);
+          }
+          if (r.overrides.boxCBM !== r.originalOverrides.boxCBM && r.overrides.boxCBM !== '') {
+            params.overrideBoxCBM = parseFloat(r.overrides.boxCBM);
+          }
+          if (r.overrides.qtyPerCarton !== r.originalOverrides.qtyPerCarton && r.overrides.qtyPerCarton !== '') {
+            params.overrideQtyPerCarton = parseFloat(r.overrides.qtyPerCarton);
+          }
+
+          const result = await pricingApi.calculatePrice(r.selectedItem._id, params);
+
+          return { rowId: r.id, result, error: null };
+        } catch (err: unknown) {
+          const axiosErr = err as any;
+          const message = axiosErr?.response?.data?.message || (err instanceof Error ? err.message : 'שגיאה בחישוב');
+          return { rowId: r.id, result: null, error: message };
+        }
+      });
+
+      const results = await Promise.all(recalcPromises);
+
+      // Update rows with recalculated results
+      setRows(prev =>
+        prev.map(r => {
+          const recalcResult = results.find(res => res.rowId === r.id);
+          if (!recalcResult) return r;
+
+          return {
+            ...r,
+            result: recalcResult.result,
+            error: recalcResult.error,
+            isLoading: false,
+          };
+        })
+      );
+    } catch (error) {
+      console.error('Failed to update freight rate:', error);
+      setFeedbackMessage('שגיאה בעדכון הובלה');
+      setFeedbackType('error');
+      setTimeout(() => {
+        setFeedbackMessage(null);
+        setFeedbackType(null);
+      }, 3000);
+    }
+  }, [freightInput, containerSizeCBM, rows]);
 
   return {
     // Rows
@@ -298,6 +552,15 @@ export function useMultiSKUPricing() {
     resetRow,
     updateRowOverride,
     calculateRow,
+
+    // Container freight
+    currentContainerFreight,
+    freightInput,
+    setFreightInput,
+    applyTempFreight,
+    applyGlobalFreight,
+    feedbackMessage,
+    feedbackType,
 
     // From SKU
     fromQuery,
