@@ -129,7 +129,13 @@ export function ManagerDashboard() {
   }
 
   if (activeModule === 'tasks') {
-    return <TasksModule onBack={handleBack} onLogout={logout} />;
+    return (
+      <TasksModule
+        currentUser={user || undefined}
+        onBack={handleBack}
+        onLogout={logout}
+      />
+    );
   }
 
   // Filter modules by role

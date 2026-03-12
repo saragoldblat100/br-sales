@@ -70,7 +70,13 @@ export function SalesDashboardContainer() {
   }
 
   if (activeModule === 'tasks') {
-    return <TasksModule onBack={handleBackToMenu} onLogout={handleLogout} />;
+    return (
+      <TasksModule
+        currentUser={user}
+        onBack={handleBackToMenu}
+        onLogout={handleLogout}
+      />
+    );
   }
 
   return (
