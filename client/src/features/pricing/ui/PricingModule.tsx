@@ -5,6 +5,7 @@ import { useMultiSKUPricing } from '../hooks/useMultiSKUPricing';
 
 interface PricingModuleProps {
   onBack: () => void;
+  onLogout?: () => void;
 }
 
 export interface PricingOverrides {
@@ -21,7 +22,7 @@ export const EMPTY_OVERRIDES: PricingOverrides = {
   supplierPrice: '', freight: '', margin: '', bankRate: '', usdRate: '', boxCBM: '', qtyPerCarton: '',
 };
 
-export function PricingModule({ onBack }: PricingModuleProps) {
+export function PricingModule({ onBack, onLogout }: PricingModuleProps) {
   // Single item state
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchItem[]>([]);
@@ -71,7 +72,13 @@ export function PricingModule({ onBack }: PricingModuleProps) {
       if (ov.qtyPerCarton !== '') params.overrideQtyPerCarton = parseFloat(ov.qtyPerCarton);
 
       const data = await pricingApi.calculatePrice(itemId, params);
-      setResult(data);
+      // Only set result if it's a full PricingCalcResult (not partial)
+      if (!('partial' in data)) {
+        setResult(data as any);
+      } else {
+        // If partial, show as error since single-item pricing needs full calculation
+        setCalcError('לא ניתן לחשב מחיר - חסרים נתונים במערכת');
+      }
     } catch (err: unknown) {
       // Handle both AxiosError and custom errors with attached response
       const axiosErr = err as any;
@@ -176,6 +183,7 @@ export function PricingModule({ onBack }: PricingModuleProps) {
       missingFields={missingFields}
       overrides={overrides}
       onBack={onBack}
+      onLogout={onLogout || (() => {})}
       onSearchChange={handleSearchChange}
       onSelectItem={handleSelectItem}
       onClearSelection={handleClearSelection}
@@ -206,6 +214,13 @@ export function PricingModule({ onBack }: PricingModuleProps) {
         onCalculateRow: multiSKU.calculateRow,
         onResetRow: multiSKU.resetRow,
         onDeleteRow: multiSKU.deleteRow,
+        currentContainerFreight: multiSKU.currentContainerFreight,
+        freightInput: multiSKU.freightInput,
+        onChangeFreightInput: multiSKU.setFreightInput,
+        onApplyGlobalFreight: multiSKU.applyGlobalFreight,
+        onApplyTempFreight: multiSKU.applyTempFreight,
+        feedbackMessage: multiSKU.feedbackMessage,
+        feedbackType: multiSKU.feedbackType,
       }}
     />
   );

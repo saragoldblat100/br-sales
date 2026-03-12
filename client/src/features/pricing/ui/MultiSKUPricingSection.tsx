@@ -27,6 +27,13 @@ interface MultiSKUPricingSectionProps {
   onCalculateRow: (rowId: string) => void;
   onResetRow: (rowId: string) => void;
   onDeleteRow: (rowId: string) => void;
+  currentContainerFreight: number | null;
+  freightInput: string;
+  onChangeFreightInput: (v: string) => void;
+  onApplyGlobalFreight: () => void;
+  onApplyTempFreight: () => void;
+  feedbackMessage: string | null;
+  feedbackType: 'success' | 'error' | null;
 }
 
 export function MultiSKUPricingSection({
@@ -53,19 +60,26 @@ export function MultiSKUPricingSection({
   onCalculateRow,
   onResetRow,
   onDeleteRow,
+  currentContainerFreight,
+  freightInput,
+  onChangeFreightInput,
+  onApplyGlobalFreight,
+  onApplyTempFreight,
+  feedbackMessage,
+  feedbackType,
 }: MultiSKUPricingSectionProps) {
   return (
-    <div className="space-y-6 mt-8">
+    <div className="space-y-6 mt-8 -mx-4 px-4">
       {/* Divider */}
       <div className="border-t border-gray-200 pt-6">
-        <h2 className="text-lg font-bold text-gray-800 mb-4">חישוב מרובה פריטים</h2>
-
         {/* Range Selector - Compact Toolbar */}
-        <div className=" rounded-lg shadow-sm p-4 border border-gray-100 mb-6">
+        <div className="rounded-lg shadow-sm p-4 border border-gray-100 mb-6 flex flex-col items-center justify-center">
+          <h2 className="text-lg font-bold text-gray-800 mb-6">חישוב מרובה פריטים</h2>
+
           {/* Filter Controls Row */}
-          <div className="flex items-end gap-3 flex-wrap">
+          <div className="flex items-end gap-3 flex-wrap justify-center">
             {/* FROM SKU */}
-            <div className="relative flex-1 min-w-48">
+            <div className="relative w-40">
               <label className="block text-xs font-semibold text-gray-600 mb-1.5"> ממק"ט </label>
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -101,7 +115,7 @@ export function MultiSKUPricingSection({
             </div>
 
             {/* TO SKU */}
-            <div className="relative flex-1 min-w-48">
+            <div className="relative w-40">
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">עד מק"ט </label>
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -154,9 +168,60 @@ export function MultiSKUPricingSection({
           </div>
         </div>
 
+        {/* Feedback Message */}
+        {feedbackMessage && (
+          <div className={`mb-4 p-3 rounded-lg text-sm font-medium ${
+            feedbackType === 'success'
+              ? 'bg-green-100 text-green-800 border border-green-200'
+              : 'bg-red-100 text-red-800 border border-red-200'
+          }`}>
+            {feedbackMessage}
+          </div>
+        )}
+
+        {/* Container Freight Controls */}
+        {rows.length > 0 && (
+          <div className="mb-4 p-4 bg-transparent">
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="text-sm text-gray-700">
+                הובלה למכולה (USD):
+                <span className="font-bold ml-2">
+                  {currentContainerFreight !== null ? `$${currentContainerFreight.toFixed(2)}` : '—'}
+                </span>
+              </div>
+
+              <div className="flex gap-0">
+                <input
+                  type="number"
+                  step="0.01"
+                  value={freightInput}
+                  onChange={(e) => onChangeFreightInput(e.target.value)}
+                  placeholder="הזן הובלה חדשה"
+                  className="w-32 px-2 py-1 border border-gray-300 rounded-r-lg text-sm focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
+                />
+                <button
+                  onClick={onApplyGlobalFreight}
+                  disabled={!freightInput || isNaN(parseFloat(freightInput))}
+                  className="px-2 py-1 bg-emerald-600 text-white text-xs hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-l-0 border-emerald-600"
+                >
+                  עדכון מערכתי 
+                </button>
+
+                <button
+                  onClick={onApplyTempFreight}
+                  disabled={!freightInput || isNaN(parseFloat(freightInput))}
+                  className="px-2 py-1 bg-slate-600 text-white text-xs rounded-l-lg hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors border border-l-0 border-slate-600"
+                >
+                  עדכון זמני בלבד
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Table Section */}
         {rows.length > 0 && (
-          <div className="rounded-2xl shadow-md overflow-hidden border border-gray-200 relative">
+          <div className="rounded-2xl shadow-md overflow-hidden md:overflow-visible border border-gray-200 relative">
             {addingRange && (
               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center rounded-2xl">
                 <div className="flex flex-col items-center gap-2">
@@ -165,7 +230,7 @@ export function MultiSKUPricingSection({
                 </div>
               </div>
             )}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto md:overflow-visible">
               <table className="w-full bg-white">
                 {/* Header */}
                 <thead className="bg-gray-50 sticky top-0 z-10 border-b border-gray-200">
@@ -308,22 +373,26 @@ export function MultiSKUPricingSection({
 
                       {/* Carton Price - Result */}
                       <td className="px-4 py-3 text-sm font-bold text-orange-600 whitespace-nowrap">
-                        ${row.result?.pricingChain.calculatedPricePerCartonUSD.toFixed(2) || '—'}
+                        {row.result && !('partial' in row.result)
+                          ? `$${(row.result as any).pricingChain.calculatedPricePerCartonUSD.toFixed(2)}`
+                          : '—'}
                       </td>
 
                       {/* Unit Price - Result */}
                       <td className="px-4 py-3 text-sm font-bold text-orange-600 whitespace-nowrap">
-                        ${row.result?.pricingChain.calculatedPricePerUnitUSD.toFixed(2) || '—'}
+                        {row.result && !('partial' in row.result)
+                          ? `$${(row.result as any).pricingChain.calculatedPricePerUnitUSD.toFixed(2)}`
+                          : '—'}
                       </td>
 
                       {/* Last Sale Price */}
                       <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
-                        {row.result?.pricingChain.lastSaleInfo ? (
+                        {row.result && !('partial' in row.result) && (row.result as any).pricingChain.lastSaleInfo ? (
                           <div className="flex flex-col gap-0.5">
-                            <span className="font-bold text-gray-900">₪{row.result.pricingChain.lastSaleInfo.priceILS.toFixed(2)}</span>
-                            {row.result.pricingChain.lastSaleInfo.date && (
+                            <span className="font-bold text-gray-900">₪{((row.result as any).pricingChain.lastSaleInfo.priceILS).toFixed(2)}</span>
+                            {(row.result as any).pricingChain.lastSaleInfo.date && (
                               <span className="text-[11px] text-gray-500">
-                                {new Date(row.result.pricingChain.lastSaleInfo.date).toLocaleDateString('he-IL')}
+                                {new Date((row.result as any).pricingChain.lastSaleInfo.date).toLocaleDateString('he-IL')}
                               </span>
                             )}
                           </div>
@@ -394,3 +463,5 @@ export function MultiSKUPricingSection({
     </div>
   );
 }
+
+
