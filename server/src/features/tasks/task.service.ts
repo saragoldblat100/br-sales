@@ -106,11 +106,7 @@ export const taskService = {
       throw AppError.notFound('Task');
     }
 
-    // Check permissions: only creator or admin can update
-    if (task.createdBy.toString() !== userId) {
-      throw AppError.forbidden('You can only edit tasks you created');
-    }
-
+    // All authenticated users can edit any task
     // Update fields
     if (payload.title !== undefined) {
       if (payload.title.trim().length === 0) {
@@ -162,11 +158,7 @@ export const taskService = {
       throw AppError.notFound('Task');
     }
 
-    // Check permissions: only creator or admin can update
-    if (task.createdBy.toString() !== userId) {
-      throw AppError.forbidden('You can only update tasks you created');
-    }
-
+    // All authenticated users can update task status
     task.status = status;
     task.updatedBy = new Types.ObjectId(userId);
     const updatedTask = await task.save();
