@@ -23,6 +23,7 @@ interface MultiSKUProps {
   onSetShowFromDropdown: (show: boolean) => void;
   onSetShowToDropdown: (show: boolean) => void;
   onAddRange: () => void;
+  addingRange: boolean;
   onOverrideChange: (rowId: string, field: keyof PricingOverrides, value: string) => void;
   onCalculateRow: (rowId: string) => void;
   onResetRow: (rowId: string) => void;
@@ -368,6 +369,7 @@ export function PricingModuleView({
           onSetShowFromDropdown={multiSKUProps.onSetShowFromDropdown}
           onSetShowToDropdown={multiSKUProps.onSetShowToDropdown}
           onAddRange={multiSKUProps.onAddRange}
+          addingRange={multiSKUProps.addingRange}
           onOverrideChange={multiSKUProps.onOverrideChange}
           onCalculateRow={multiSKUProps.onCalculateRow}
           onResetRow={multiSKUProps.onResetRow}

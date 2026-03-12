@@ -16,6 +16,7 @@ export interface MultiSKURow {
 export function useMultiSKUPricing() {
   // Rows data
   const [rows, setRows] = useState<MultiSKURow[]>([]);
+  const [addingRange, setAddingRange] = useState(false);
 
   // From SKU search
   const [fromQuery, setFromQuery] = useState('');
@@ -108,6 +109,7 @@ export function useMultiSKUPricing() {
       return;
     }
 
+    setAddingRange(true);
     try {
       // Search items starting from the fromItem code to get a range
       const searchResults = await pricingApi.searchItems(fromItem.itemCode);
@@ -133,17 +135,48 @@ export function useMultiSKUPricing() {
       const existingCodes = new Set(rows.map(r => r.selectedItem.itemCode));
       const newItems = rangeItems.filter(item => !existingCodes.has(item.itemCode));
 
-      // Create new rows with empty overrides (user will calculate per-row)
-      const newRows: MultiSKURow[] = newItems.map(item => ({
-        id: crypto.randomUUID(),
-        selectedItem: item,
-        overrides: EMPTY_OVERRIDES,
-        originalOverrides: EMPTY_OVERRIDES,
-        result: null,
-        originalResult: null,
-        isLoading: false,
-        error: null,
-      }));
+      // Load full pricing data for each item
+      const newRows: MultiSKURow[] = [];
+      for (const item of newItems) {
+        try {
+          // Load full item data with empty params to get defaults
+          const pricingResult = await pricingApi.calculatePrice(item._id, {});
+
+          // Build original overrides from the pricing result
+          const originalOv: PricingOverrides = {
+            supplierPrice: pricingResult.pricingChain.supplierPricePerCarton.toString(),
+            freight: pricingResult.pricingChain.freightCostPerCarton.toString(),
+            margin: pricingResult.pricingChain.marginPercentage.toString(),
+            usdRate: pricingResult.pricingChain.usdToIls.toString(),
+            bankRate: '',
+            boxCBM: pricingResult.pricingChain.boxCBM.toString(),
+            qtyPerCarton: pricingResult.pricingChain.qtyPerCarton.toString(),
+          };
+
+          newRows.push({
+            id: crypto.randomUUID(),
+            selectedItem: item,
+            overrides: { ...originalOv },
+            originalOverrides: originalOv,
+            result: pricingResult,
+            originalResult: pricingResult,
+            isLoading: false,
+            error: null,
+          });
+        } catch (itemErr) {
+          // If item data can't be loaded, still add it with empty overrides
+          newRows.push({
+            id: crypto.randomUUID(),
+            selectedItem: item,
+            overrides: EMPTY_OVERRIDES,
+            originalOverrides: EMPTY_OVERRIDES,
+            result: null,
+            originalResult: null,
+            isLoading: false,
+            error: null,
+          });
+        }
+      }
 
       setRows(prev => [...prev, ...newRows]);
 
@@ -156,6 +189,8 @@ export function useMultiSKUPricing() {
       setToResults([]);
     } catch (err) {
       console.error('Error adding range:', err);
+    } finally {
+      setAddingRange(false);
     }
   }, [fromItem, toItem, rows]);
 
@@ -286,6 +321,7 @@ export function useMultiSKUPricing() {
 
     // Add range
     onAddRange: handleAddRange,
+    addingRange,
 
     // Cleanup
     cleanup,

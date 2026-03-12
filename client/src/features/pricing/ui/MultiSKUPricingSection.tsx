@@ -22,6 +22,7 @@ interface MultiSKUPricingSectionProps {
   onSetShowFromDropdown: (show: boolean) => void;
   onSetShowToDropdown: (show: boolean) => void;
   onAddRange: () => void;
+  addingRange: boolean;
   onOverrideChange: (rowId: string, field: keyof PricingOverrides, value: string) => void;
   onCalculateRow: (rowId: string) => void;
   onResetRow: (rowId: string) => void;
@@ -47,6 +48,7 @@ export function MultiSKUPricingSection({
   onSetShowFromDropdown,
   onSetShowToDropdown,
   onAddRange,
+  addingRange,
   onOverrideChange,
   onCalculateRow,
   onResetRow,
@@ -137,17 +139,32 @@ export function MultiSKUPricingSection({
             {/* Action Button - Secondary Style */}
             <button
               onClick={onAddRange}
-              disabled={!fromItem || !toItem}
-              className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 border border-gray-300 rounded-lg text-sm font-medium transition-all"
+              disabled={!fromItem || !toItem || addingRange}
+              className="px-4 py-1.5 bg-gray-100 hover:bg-gray-200 disabled:bg-gray-50 disabled:text-gray-400 text-gray-700 border border-gray-300 rounded-lg text-sm font-medium transition-all flex items-center gap-2"
             >
-              הצג טבלה 
+              {addingRange ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>טוען...</span>
+                </>
+              ) : (
+                'הצג טבלה'
+              )}
             </button>
           </div>
         </div>
 
         {/* Table Section */}
         {rows.length > 0 && (
-          <div className="rounded-2xl shadow-md overflow-hidden border border-gray-200">
+          <div className="rounded-2xl shadow-md overflow-hidden border border-gray-200 relative">
+            {addingRange && (
+              <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-20 flex items-center justify-center rounded-2xl">
+                <div className="flex flex-col items-center gap-2">
+                  <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+                  <p className="text-sm text-gray-600 font-medium">טוען נתונים...</p>
+                </div>
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full bg-white">
                 {/* Header */}
@@ -184,6 +201,9 @@ export function MultiSKUPricingSection({
                       מ.יחידה ($)
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 whitespace-nowrap">
+                      מכירה אחרונה (₪)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 whitespace-nowrap">
                       פעולות
                     </th>
                   </tr>
@@ -215,7 +235,8 @@ export function MultiSKUPricingSection({
                           step="0.01"
                           value={row.overrides.supplierPrice}
                           onChange={(e) => onOverrideChange(row.id, 'supplierPrice', e.target.value)}
-                          placeholder="$"
+                          placeholder={row.originalOverrides.supplierPrice}
+                          title={`מקורי: ${row.originalOverrides.supplierPrice}`}
                           className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                         />
                       </td>
@@ -227,7 +248,8 @@ export function MultiSKUPricingSection({
                           step="0.01"
                           value={row.overrides.freight}
                           onChange={(e) => onOverrideChange(row.id, 'freight', e.target.value)}
-                          placeholder="$"
+                          placeholder={row.originalOverrides.freight}
+                          title={`מקורי: ${row.originalOverrides.freight}`}
                           className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                         />
                       </td>
@@ -239,7 +261,8 @@ export function MultiSKUPricingSection({
                           step="0.1"
                           value={row.overrides.margin}
                           onChange={(e) => onOverrideChange(row.id, 'margin', e.target.value)}
-                          placeholder="%"
+                          placeholder={row.originalOverrides.margin}
+                          title={`מקורי: ${row.originalOverrides.margin}`}
                           className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                         />
                       </td>
@@ -251,7 +274,8 @@ export function MultiSKUPricingSection({
                           step="0.0001"
                           value={row.overrides.usdRate}
                           onChange={(e) => onOverrideChange(row.id, 'usdRate', e.target.value)}
-                          placeholder="₪"
+                          placeholder={row.originalOverrides.usdRate}
+                          title={`מקורי: ${row.originalOverrides.usdRate}`}
                           className="w-24 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                         />
                       </td>
@@ -263,6 +287,8 @@ export function MultiSKUPricingSection({
                           step="0.01"
                           value={row.overrides.boxCBM}
                           onChange={(e) => onOverrideChange(row.id, 'boxCBM', e.target.value)}
+                          placeholder={row.originalOverrides.boxCBM}
+                          title={`מקורי: ${row.originalOverrides.boxCBM}`}
                           className="w-16 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                         />
                       </td>
@@ -274,6 +300,8 @@ export function MultiSKUPricingSection({
                           step="1"
                           value={row.overrides.qtyPerCarton}
                           onChange={(e) => onOverrideChange(row.id, 'qtyPerCarton', e.target.value)}
+                          placeholder={row.originalOverrides.qtyPerCarton}
+                          title={`מקורי: ${row.originalOverrides.qtyPerCarton}`}
                           className="w-16 px-2 py-1 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-blue-400 focus:border-blue-400"
                         />
                       </td>
@@ -286,6 +314,22 @@ export function MultiSKUPricingSection({
                       {/* Unit Price - Result */}
                       <td className="px-4 py-3 text-sm font-bold text-orange-600 whitespace-nowrap">
                         ${row.result?.pricingChain.calculatedPricePerUnitUSD.toFixed(2) || '—'}
+                      </td>
+
+                      {/* Last Sale Price */}
+                      <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                        {row.result?.pricingChain.lastSaleInfo ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-bold text-gray-900">₪{row.result.pricingChain.lastSaleInfo.priceILS.toFixed(2)}</span>
+                            {row.result.pricingChain.lastSaleInfo.date && (
+                              <span className="text-[11px] text-gray-500">
+                                {new Date(row.result.pricingChain.lastSaleInfo.date).toLocaleDateString('he-IL')}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
                       </td>
 
                       {/* Actions */}

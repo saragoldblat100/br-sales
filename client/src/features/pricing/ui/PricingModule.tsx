@@ -201,6 +201,7 @@ export function PricingModule({ onBack }: PricingModuleProps) {
         onSetShowFromDropdown: multiSKU.setShowFromDropdown,
         onSetShowToDropdown: multiSKU.setShowToDropdown,
         onAddRange: multiSKU.onAddRange,
+        addingRange: multiSKU.addingRange,
         onOverrideChange: multiSKU.updateRowOverride,
         onCalculateRow: multiSKU.calculateRow,
         onResetRow: multiSKU.resetRow,

@@ -53,6 +53,37 @@ router.get(
 );
 
 /**
+ * GET /api/sales/items/range - Get items in a SKU range
+ */
+router.get(
+  '/items/range',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { from, to, limit = 50 } = req.query;
+
+    if (!from || !to) {
+      res.json({ items: [] });
+      return;
+    }
+
+    // Handle reversed range (swap if needed)
+    const fromCode = from as string;
+    const toCode = to as string;
+    const minCode = fromCode <= toCode ? fromCode : toCode;
+    const maxCode = fromCode <= toCode ? toCode : fromCode;
+
+    const items = await Item.find({
+      isActive: true,
+      itemCode: { $gte: minCode, $lte: maxCode },
+    })
+      .populate('categoryId', 'name nameEn nameHe')
+      .sort({ itemCode: 1 })
+      .limit(Number(limit));
+
+    res.json({ items });
+  })
+);
+
+/**
  * GET /api/sales/items/search - Search items by code or name
  */
 router.get(
@@ -528,13 +559,27 @@ router.post(
     if (missingFields.length > 0) {
       // Extract just the field names for the missing array
       const missing = missingFields.map(f => f.field);
+
+      // Build partial pricing chain with available data
+      const freightCostPerContainer = freightRateDoc ? freightRateDoc.freightCost : 4700;
+      const freightCostPerCBM = freightCostPerContainer / containerSizeCBM;
+      const freightCostPerCarton = freightCostPerCBM * boxCBM;
+
       res.status(400).json({
         error: 'MISSING_PRICING_DATA',
         message: 'לא ניתן לחשב מחיר - חסרים נתונים',
         missing,
         missingFields,
         item: buildItemResponse(item),
-        explanation: 'נדרשים הנתונים הבאים לחישוב המחיר:'
+        explanation: 'נדרשים הנתונים הבאים לחישוב המחיר:',
+        partialPricingChain: {
+          supplierPricePerCarton: item.supplierPrice || 0,
+          boxCBM: boxCBM,
+          qtyPerCarton: qtyPerCarton,
+          usdToIls: usdToIls,
+          freightCostPerCarton: parseFloat(freightCostPerCarton.toFixed(2)),
+          marginPercentage: 0,
+        }
       });
       return;
     }
@@ -628,6 +673,47 @@ router.post(
         boxCBM,
       },
     });
+  })
+);
+
+/**
+ * POST /api/sales/freight-rates/update
+ * Admin/Manager only - Update freight rate for container
+ */
+router.post(
+  '/freight-rates/update',
+  authorize(['admin', 'manager']),
+  asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
+    const {
+      portOfOrigin = 'Shenzhen Yantian',
+      containerSizeCBM = 68,
+      freightCost,
+      notes = '',
+    } = req.body;
+
+    // Validate freight cost
+    if (freightCost === undefined || isNaN(Number(freightCost)) || Number(freightCost) < 0) {
+      res.status(400).json({ error: 'INVALID_FREIGHT', message: 'Invalid freightCost' });
+      return;
+    }
+
+    // Deactivate previous active rate for same port/size
+    await FreightRate.updateMany(
+      { portOfOrigin, containerSizeCBM, isActive: true },
+      { $set: { isActive: false } }
+    );
+
+    // Create new active rate
+    const newRate = await FreightRate.create({
+      portOfOrigin,
+      containerSizeCBM,
+      freightCost: Number(freightCost),
+      validFrom: new Date(),
+      isActive: true,
+      notes,
+    });
+
+    res.json({ success: true, rate: newRate });
   })
 );
 
