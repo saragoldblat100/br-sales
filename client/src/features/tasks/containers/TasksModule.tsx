@@ -10,11 +10,15 @@ import { TasksModuleView } from '../ui/TasksModuleView';
 import { TaskDetailsModal } from './TaskDetailsModal';
 
 interface TasksModuleProps {
+  currentUser?: {
+    id: string;
+    role: string;
+  };
   onBack: () => void;
   onLogout: () => void;
 }
 
-export function TasksModule({ onBack, onLogout }: TasksModuleProps) {
+export function TasksModule({ currentUser, onBack, onLogout }: TasksModuleProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -118,6 +122,7 @@ export function TasksModule({ onBack, onLogout }: TasksModuleProps) {
     <>
       <TasksModuleView
         tasks={tasks}
+        currentUser={currentUser}
         statusFilter={statusFilter}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}

@@ -4,6 +4,10 @@ import { Task, TaskStatus } from '../types';
 
 interface TasksModuleViewProps {
   tasks: Task[];
+  currentUser?: {
+    id: string;
+    role: string;
+  };
   statusFilter: TaskStatus | '';
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -28,6 +32,7 @@ const STATUS_CONFIG: Record<TaskStatus, { label: string; bg: string; text: strin
 
 export function TasksModuleView({
   tasks,
+  currentUser,
   statusFilter,
   searchQuery,
   onSearchChange,
@@ -217,13 +222,17 @@ export function TasksModuleView({
                           >
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button
-                            onClick={() => onDeleteTask(task._id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="מחיקה"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                          {currentUser && (
+                            (currentUser.role === 'admin' || currentUser.role === 'manager' || currentUser.id === task.createdBy.id) && (
+                              <button
+                                onClick={() => onDeleteTask(task._id)}
+                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="מחיקה"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            )
+                          )}
                         </div>
                       </td>
                     </tr>
