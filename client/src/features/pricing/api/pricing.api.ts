@@ -66,14 +66,66 @@ export interface SearchItem {
   imageUrl?: string;
 }
 
+export interface PartialPricingChain {
+  supplierPricePerCarton: number;
+  boxCBM: number;
+  qtyPerCarton: number;
+  usdToIls: number;
+  freightCostPerCarton: number;
+  marginPercentage: number;
+}
+
+export interface PartialPricingResult {
+  partial: true;
+  missingFields: Array<{ field: string; reason: string }>;
+  item: PricingItem;
+  partialPricingChain: PartialPricingChain;
+}
+
+export interface UpdateFreightParams {
+  portOfOrigin?: string;
+  containerSizeCBM?: number;
+  freightCost: number;
+  notes?: string;
+}
+
 export const pricingApi = {
   async searchItems(query: string): Promise<SearchItem[]> {
     const response = await api.get(`/sales/items/search?q=${encodeURIComponent(query)}`);
     return response.data.items || response.data.data || [];
   },
 
-  async calculatePrice(itemId: string, params: PricingCalcParams): Promise<PricingCalcResult> {
-    const response = await api.post(`/sales/items/${itemId}/pricing-calculator`, params);
+  async getItemsInRange(from: string, to: string): Promise<SearchItem[]> {
+    const response = await api.get(
+      `/sales/items/range?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&limit=50`
+    );
+    return response.data.items || [];
+  },
+
+  async calculatePrice(
+    itemId: string,
+    params: PricingCalcParams
+  ): Promise<PricingCalcResult | PartialPricingResult> {
+    try {
+      const response = await api.post(`/sales/items/${itemId}/pricing-calculator`, params);
+      return response.data;
+    } catch (err: any) {
+      // If it's a 400 with partial data, return it instead of throwing
+      if (err.response?.status === 400 && err.response?.data?.partialPricingChain) {
+        return {
+          partial: true,
+          missingFields: err.response.data.missingFields || [],
+          item: err.response.data.item,
+          partialPricingChain: err.response.data.partialPricingChain,
+        } as PartialPricingResult;
+      }
+      // Otherwise throw the error normally
+      throw err;
+    }
+  },
+
+  async updateFreightRate(params: UpdateFreightParams) {
+    const response = await api.post('/sales/freight-rates/update', params);
     return response.data;
   },
 };
