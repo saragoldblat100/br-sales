@@ -121,7 +121,7 @@ export function ManagerDashboard() {
   }
 
   if (activeModule === 'pricing') {
-    return <PricingModule onBack={handleBack} />;
+    return <PricingModule onBack={handleBack} onLogout={logout} />;
   }
 
   if (activeModule === 'orders') {

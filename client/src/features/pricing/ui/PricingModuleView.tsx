@@ -1,4 +1,4 @@
-import { ArrowRight, Search, Loader2, X, AlertTriangle, Calculator } from 'lucide-react';
+import { ArrowRight, Search, Loader2, X, AlertTriangle, Calculator, LogOut } from 'lucide-react';
 import type { PricingCalcResult, SearchItem } from '../api/pricing.api';
 import type { PricingOverrides } from './PricingModule';
 import { MultiSKUPricingSection } from './MultiSKUPricingSection';
@@ -28,6 +28,13 @@ interface MultiSKUProps {
   onCalculateRow: (rowId: string) => void;
   onResetRow: (rowId: string) => void;
   onDeleteRow: (rowId: string) => void;
+  currentContainerFreight: number | null;
+  freightInput: string;
+  onChangeFreightInput: (v: string) => void;
+  onApplyGlobalFreight: () => void;
+  onApplyTempFreight: () => void;
+  feedbackMessage: string | null;
+  feedbackType: 'success' | 'error' | null;
 }
 
 interface PricingModuleViewProps {
@@ -41,6 +48,7 @@ interface PricingModuleViewProps {
   missingFields: string[];
   overrides: PricingOverrides;
   onBack: () => void;
+  onLogout: () => void;
   onSearchChange: (query: string) => void;
   onSelectItem: (item: SearchItem) => void;
   onClearSelection: () => void;
@@ -61,6 +69,7 @@ export function PricingModuleView({
   missingFields,
   overrides,
   onBack,
+  onLogout,
   onSearchChange,
   onSelectItem,
   onClearSelection,
@@ -74,6 +83,15 @@ export function PricingModuleView({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-100 via-blue-50 to-gray-100 p-6 flex flex-col" dir="rtl">
+      {/* Logout button */}
+      <button
+        onClick={onLogout}
+        className="absolute top-6 left-6 w-12 h-12 bg-red-500 hover:bg-red-600 rounded-xl flex items-center justify-center shadow-lg transition-all"
+        aria-label="התנתק"
+      >
+        <LogOut className="w-6 h-6 text-white" />
+      </button>
+
       {/* Back button */}
       <button
         onClick={onBack}
@@ -83,18 +101,20 @@ export function PricingModuleView({
         <span className="font-medium">חזרה</span>
       </button>
 
-      <div className="max-w-5xl mx-auto pt-8 flex-1">
+      <div className="w-full flex-1 overflow-x-auto">
+        <div className="w-full px-4 md:px-8">
         {/* Logo */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-6 pt-4">
           <img src="/logoBravo.svg" alt="Bravo Logo" className="h-20 mx-auto mb-4" />
           <h1 className="text-2xl font-bold text-gray-800">מחשבון תמחור</h1>
         </div>
 
         {/* Single Item Section */}
+        <div className="flex flex-col items-center justify-center">
         <h2 className="text-lg font-bold text-gray-800 mb-4">חישוב מחיר לפריט יחיד</h2>
 
         {/* Search */}
-        <div className="relative max-w-lg mx-auto mb-8">
+        <div className="relative w-64 mb-8">
           <div className="relative">
             <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
@@ -347,7 +367,7 @@ export function PricingModuleView({
           </div>
         )}
 
-
+        </div>
 
         {/* Multi-SKU Section */}
         <MultiSKUPricingSection
@@ -374,8 +394,16 @@ export function PricingModuleView({
           onCalculateRow={multiSKUProps.onCalculateRow}
           onResetRow={multiSKUProps.onResetRow}
           onDeleteRow={multiSKUProps.onDeleteRow}
+          currentContainerFreight={multiSKUProps.currentContainerFreight}
+          freightInput={multiSKUProps.freightInput}
+          onChangeFreightInput={multiSKUProps.onChangeFreightInput}
+          onApplyGlobalFreight={multiSKUProps.onApplyGlobalFreight}
+          onApplyTempFreight={multiSKUProps.onApplyTempFreight}
+          feedbackMessage={multiSKUProps.feedbackMessage}
+          feedbackType={multiSKUProps.feedbackType}
         />
 
+        </div>
       </div>
 
       {/* Footer - Sticky to Bottom */}
@@ -440,3 +468,4 @@ function ResultCard({ label, value, subtitle }: { label: string; value: string; 
     </div>
   );
 }
+
