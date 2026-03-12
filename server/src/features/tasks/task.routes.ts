@@ -159,7 +159,7 @@ router.delete(
   asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const { id } = req.params;
 
-    await taskService.deleteTask(id, req.user!.id);
+    await taskService.deleteTask(id, req.user!.id, req.user!.role);
 
     res.json({
       success: true,

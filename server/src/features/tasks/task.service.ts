@@ -178,7 +178,7 @@ export const taskService = {
       .lean();
   },
 
-  async deleteTask(id: string, userId: string) {
+  async deleteTask(id: string, userId: string, userRole?: string) {
     if (!Types.ObjectId.isValid(id)) {
       throw AppError.badRequest('Invalid task ID');
     }
@@ -189,8 +189,13 @@ export const taskService = {
       throw AppError.notFound('Task');
     }
 
-    // Check permissions: only creator or admin can delete
-    if (task.createdBy.toString() !== userId) {
+    // Check permissions:
+    // ADMIN and MANAGER can delete any task
+    // Other users can only delete their own tasks
+    const isAdmin = userRole === 'admin' || userRole === 'manager';
+    const isOwner = task.createdBy.toString() === userId;
+
+    if (!isAdmin && !isOwner) {
       throw AppError.forbidden('You can only delete tasks you created');
     }
 
