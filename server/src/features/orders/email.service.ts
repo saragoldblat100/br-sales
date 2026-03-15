@@ -24,6 +24,19 @@ const createTransporter = () => {
 const transporter = createTransporter();
 
 /**
+ * Escape HTML special characters to prevent injection
+ */
+const escapeHTML = (str: string | undefined): string => {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+};
+
+/**
  * Format price with currency symbol
  */
 const formatPrice = (amount: number, currency: 'ILS' | 'USD'): string => {
@@ -42,8 +55,8 @@ const generateOrderEmailHTML = (order: IOrder): string => {
     .map(
       (line) => `
       <tr>
-        <td style="padding: 8px; border: 1px solid #ddd;">${line.itemCode}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${line.description}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${escapeHTML(line.itemCode)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${escapeHTML(line.description)}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${line.cartons}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${line.quantity}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatPrice(line.pricePerUnit, line.currency)}</td>
@@ -79,12 +92,12 @@ const generateOrderEmailHTML = (order: IOrder): string => {
     <body>
       <div class="header">
         <h1 style="color: #d32f2f;">הזמנה חדשה - Bravo</h1>
-        <p>מספר הזמנה: <strong>${order.orderNumber}</strong></p>
+        <p>מספר הזמנה: <strong>${escapeHTML(order.orderNumber)}</strong></p>
       </div>
 
       <div class="content">
         <h2>פרטי לקוח</h2>
-        <p><strong>שם לקוח:</strong> ${order.customerName}</p>
+        <p><strong>שם לקוח:</strong> ${escapeHTML(order.customerName)}</p>
 
         <h2>פריטים</h2>
         <table>
@@ -107,7 +120,7 @@ const generateOrderEmailHTML = (order: IOrder): string => {
         <p><strong>סה"כ CBM:</strong> ${order.totalCBM.toFixed(3)}</p>
         ${totalsHTML.join('')}
 
-        ${order.notes ? `<h2>הערות</h2><p>${order.notes}</p>` : ''}
+        ${order.notes ? `<h2>הערות</h2><p>${escapeHTML(order.notes)}</p>` : ''}
       </div>
 
       <div class="footer">
@@ -213,8 +226,8 @@ const generateOrderUpdateEmailHTML = (order: IOrder): string => {
     .map(
       (line) => `
       <tr>
-        <td style="padding: 8px; border: 1px solid #ddd;">${line.itemCode}</td>
-        <td style="padding: 8px; border: 1px solid #ddd;">${line.description}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${escapeHTML(line.itemCode)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;">${escapeHTML(line.description)}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${line.cartons}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${line.quantity}</td>
         <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${formatPrice(line.pricePerUnit, line.currency)}</td>
@@ -250,12 +263,12 @@ const generateOrderUpdateEmailHTML = (order: IOrder): string => {
     <body>
       <div class="header">
         <h1 style="color: #d32f2f;">עדכון הזמנה - Bravo</h1>
-        <p>מספר הזמנה: <strong>${order.orderNumber}</strong></p>
+        <p>מספר הזמנה: <strong>${escapeHTML(order.orderNumber)}</strong></p>
       </div>
 
       <div class="content">
         <h2>פרטי לקוח</h2>
-        <p><strong>שם לקוח:</strong> ${order.customerName}</p>
+        <p><strong>שם לקוח:</strong> ${escapeHTML(order.customerName)}</p>
 
         <h2>פריטים (מעודכן)</h2>
         <table>
@@ -278,7 +291,7 @@ const generateOrderUpdateEmailHTML = (order: IOrder): string => {
         <p><strong>סה"כ CBM:</strong> ${order.totalCBM.toFixed(3)}</p>
         ${totalsHTML.join('')}
 
-        ${order.notes ? `<h2>הערות</h2><p>${order.notes}</p>` : ''}
+        ${order.notes ? `<h2>הערות</h2><p>${escapeHTML(order.notes)}</p>` : ''}
       </div>
 
       <div class="footer">
