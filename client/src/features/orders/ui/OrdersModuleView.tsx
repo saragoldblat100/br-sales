@@ -30,7 +30,7 @@ export function OrdersModuleView({
 }: OrdersModuleViewProps) {
   const statusOptions = ['order', 'pending', 'approved', 'deposit_received', 'closed', 'cancelled'];
   const statusLabels: Record<string, string> = {
-    order: 'מחכה לאישור',
+    order: 'מחכה לאישור מהמשרד',
     pending: 'הודפס הזמנה להחתמה',
     approved: 'אושר - הוחתם ע"י הלקוח',
     deposit_received: 'התקבלה מקדמה',
