@@ -369,3 +369,83 @@ export const getSentOrders = asyncHandler(async (req: Request, res: Response) =>
     },
   });
 });
+
+/**
+ * Update order lines for pending/approved orders
+ */
+export const updateOrderLines = asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const { lines, sendEmail } = req.body;
+  const userId = (req as AuthenticatedRequest).user?.id;
+  const userName = (req as AuthenticatedRequest).user?.username;
+
+  // Validate lines
+  if (!lines || lines.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'ההזמנה לא יכולה להיות ריקה',
+    });
+  }
+
+  // Validate cartons >= 1
+  const invalidCartons = lines.some((l: any) => l.cartons < 1);
+  if (invalidCartons) {
+    return res.status(400).json({
+      success: false,
+      message: 'כמות קרטונים חייבת להיות לפחות 1',
+    });
+  }
+
+  // Find order
+  const order = await Order.findById(id);
+  if (!order) {
+    return res.status(404).json({
+      success: false,
+      message: 'הזמנה לא נמצאה',
+    });
+  }
+
+  // Check editable status
+  if (!['order', 'pending', 'approved'].includes(order.status)) {
+    return res.status(403).json({
+      success: false,
+      message: 'לא ניתן לערוך הזמנה בסטטוס זה',
+    });
+  }
+
+  // Recompute totals
+  const totalCBM = lines.reduce((sum: number, line: any) => sum + (line.cbm || 0), 0);
+  const totalAmountILS = lines
+    .filter((line: any) => line.currency === 'ILS')
+    .reduce((sum: number, line: any) => sum + line.totalPrice, 0);
+  const totalAmountUSD = lines
+    .filter((line: any) => line.currency === 'USD')
+    .reduce((sum: number, line: any) => sum + line.totalPrice, 0);
+
+  // Update order
+  order.lines = lines;
+  order.totalCBM = totalCBM;
+  order.totalAmountILS = totalAmountILS;
+  order.totalAmountUSD = totalAmountUSD;
+  await order.save();
+
+  // Send email if requested
+  if (sendEmail) {
+    const { sendOrderUpdateEmail } = await import('./email.service');
+    sendOrderUpdateEmail(order as any).catch((error) => {
+      logger.error('Failed to send order update email:', error);
+    });
+  }
+
+  // Log activity
+  if (userId && userName) {
+    activityService.log(userId, userName, 'order_edit', {
+      orderNumber: order.orderNumber,
+    });
+  }
+
+  res.json({
+    success: true,
+    data: order,
+  });
+});

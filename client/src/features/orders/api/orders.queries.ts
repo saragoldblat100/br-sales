@@ -79,3 +79,24 @@ export function useGetSentOrders() {
     queryFn: () => getSentOrders(),
   });
 }
+
+/**
+ * Hook to update order lines
+ */
+export function useUpdateOrderLines() {
+  const queryClient = useQueryClient();
+  const { updateOrderLines } = require('./orders.api');
+
+  return useMutation({
+    mutationFn: ({ orderId, data }: { orderId: string; data: any }) =>
+      updateOrderLines(orderId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.all });
+    },
+  });
+}
+
+
+
+
+

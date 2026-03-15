@@ -1,4 +1,4 @@
-import { ArrowRight, ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+import { ArrowRight, Eye, Loader2, Pencil } from 'lucide-react';
 import type { OrderItem } from '../api';
 
 interface OrdersModuleViewProps {
@@ -12,6 +12,7 @@ interface OrdersModuleViewProps {
   onStatusChange: (orderId: string, newStatus: string) => void;
   isUpdating: boolean;
   onBack: () => void;
+  onEditOrder: (order: OrderItem) => void;
 }
 
 export function OrdersModuleView({
@@ -25,6 +26,7 @@ export function OrdersModuleView({
   onStatusChange,
   isUpdating,
   onBack,
+  onEditOrder,
 }: OrdersModuleViewProps) {
   const statusOptions = ['pending', 'approved', 'deposit_received', 'closed', 'cancelled'];
   const statusLabels: Record<string, string> = {
@@ -131,15 +133,32 @@ export function OrdersModuleView({
                   {/* Order header */}
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex flex-col gap-3">
-                      <div className="flex items-start justify-between gap-3">
-                        
-                        <div className="min-w-0 text-right">
+                      <div className="flex items-center gap-3">
+                        <div className="min-w-0 text-right flex-1">
                           <div className="text-xs text-gray-500">לקוח</div>
                           <div className="font-bold text-gray-900 truncate">{order.customerName}</div>
                         </div>
-                        <div className="min-w-0 text">
+                        <div className="min-w-0 text-center flex-1">
                           <div className="text-xs text-gray-500">מספר הזמנה</div>
                           <div className="font-bold text-gray-900">{order.orderNumber}</div>
+                        </div>
+                        <div className="flex-shrink-0 flex items-center gap-1">
+                          <button
+                            onClick={() => onToggleExpand(order._id)}
+                            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                            aria-label={isExpanded ? 'סגור פרטים' : 'צפה בפרטים'}
+                          >
+                            <Eye className="w-5 h-5 text-gray-900" />
+                          </button>
+                          {selectedTab === 'sent' && ['order', 'pending', 'approved'].includes(order.status) && (
+                            <button
+                              onClick={() => onEditOrder(order)}
+                              className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                              aria-label="ערוך הזמנה"
+                            >
+                              <Pencil className="w-5 h-5 text-gray-900" />
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -162,43 +181,30 @@ export function OrdersModuleView({
                               : `$${order.totalAmountUSD.toLocaleString('he-IL')}`}
                           </div>
                         </div>
-                        <div className="flex items-center justify-end gap-2">
-                          {selectedTab === 'sent' ? (
-                            <select
-                              value={order.status}
-                              onChange={(e) => onStatusChange(order._id, e.target.value)}
-                              disabled={isUpdating}
-                              className={`w-32 h-9 px-2 py-1.5 rounded-lg text-xs font-bold border-2 ${
-                                statusColors[order.status] || 'bg-gray-100 text-gray-800'
-                              } cursor-pointer disabled:opacity-50`}
-                            >
-                              {statusOptions.map((status) => (
-                                <option key={status} value={status}>
-                                  {statusLabels[status]}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <div
-                              className={`w-32 h-9 px-3 py-1.5 rounded-lg text-xs font-bold border-2 text-center flex items-center justify-center ${
-                                statusColors[order.status] || 'bg-gray-100 text-gray-800'
-                              }`}
-                            >
-                              {statusLabels[order.status]}
-                            </div>
-                          )}
-                          <button
-                            onClick={() => onToggleExpand(order._id)}
-                            className="w-9 h-9 flex items-center justify-center   transition-colors"
-                            aria-label={isExpanded ? 'סגור פרטים' : 'פתח פרטים'}
+                        {selectedTab === 'sent' ? (
+                          <select
+                            value={order.status}
+                            onChange={(e) => onStatusChange(order._id, e.target.value)}
+                            disabled={isUpdating}
+                            className={`w-32 h-9 px-2 py-1.5 rounded-lg text-xs font-bold border-2 ${
+                              statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                            } cursor-pointer disabled:opacity-50`}
                           >
-                            {isExpanded ? (
-                              <ChevronUp className="w-4 h-4 text-gray-600" />
-                            ) : (
-                              <ChevronDown className="w-4 h-4 text-gray-600" />
-                            )}
-                          </button>
-                        </div>
+                            {statusOptions.map((status) => (
+                              <option key={status} value={status}>
+                                {statusLabels[status]}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <div
+                            className={`w-32 h-9 px-3 py-1.5 rounded-lg text-xs font-bold border-2 text-center flex items-center justify-center ${
+                              statusColors[order.status] || 'bg-gray-100 text-gray-800'
+                            }`}
+                          >
+                            {statusLabels[order.status]}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

@@ -188,3 +188,24 @@ export async function getSentOrders(limit = 50, skip = 0): Promise<GetOrdersResp
   const response = await api.get(`/sales/orders/sent?${params}`);
   return response.data;
 }
+
+/**
+ * Update order lines (for pending/approved orders)
+ */
+export interface UpdateOrderLinesRequest {
+  lines: OrderLine[];
+  sendEmail: boolean;
+}
+
+export interface UpdateOrderLinesResponse {
+  success: boolean;
+  data: OrderItem;
+}
+
+export async function updateOrderLines(
+  orderId: string,
+  data: UpdateOrderLinesRequest
+): Promise<UpdateOrderLinesResponse> {
+  const response = await api.patch(`/sales/orders/${orderId}/lines`, data);
+  return response.data;
+}
