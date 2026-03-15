@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createOrder, getDraftOrder, updateCurrencyRate, getOrders, updateOrderStatus, getSentOrders, type CreateOrderRequest } from './orders.api';
+import { createOrder, getDraftOrder, updateCurrencyRate, getOrders, updateOrderStatus, getSentOrders, updateOrderLines, type CreateOrderRequest } from './orders.api';
 
 /**
  * Query keys for orders
@@ -85,7 +85,6 @@ export function useGetSentOrders() {
  */
 export function useUpdateOrderLines() {
   const queryClient = useQueryClient();
-  const { updateOrderLines } = require('./orders.api');
 
   return useMutation({
     mutationFn: ({ orderId, data }: { orderId: string; data: any }) =>

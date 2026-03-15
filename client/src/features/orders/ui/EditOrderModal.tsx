@@ -38,6 +38,7 @@ export function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps)
     }))
   );
 
+  const [notes, setNotes] = useState(order.notes || '');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SalesItem[]>([]);
   const [selectedItem, setSelectedItem] = useState<SalesItem | null>(null);
@@ -200,6 +201,7 @@ export function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps)
         orderId: order._id,
         data: {
           lines: orderLines,
+          notes: notes || undefined,
           sendEmail,
         },
       });
@@ -293,14 +295,14 @@ export function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps)
             <div className="space-y-3">
               {/* Search input */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">חיפוש לפי מק"ט</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">חיפוש לפי מק"ט או שם פריט</label>
                 <div className="relative">
                   <Search className="absolute right-3 top-2.5 w-5 h-5 text-gray-400" />
                   <input
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="הקלד לפחות 2 תווים..."
+                    placeholder="הקלד מקט או שם (לפחות 2 תווים)..."
                     className="w-full h-10 pr-10 pl-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -385,6 +387,20 @@ export function EditOrderModal({ order, onClose, onSaved }: EditOrderModalProps)
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Notes */}
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-3">הערות</h3>
+            <textarea
+              value={notes}
+              onChange={(e) => {
+                setNotes(e.target.value);
+                setIsDirty(true);
+              }}
+              placeholder="הוסף הערות להזמנה..."
+              className="w-full h-24 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
           </div>
         </div>
 

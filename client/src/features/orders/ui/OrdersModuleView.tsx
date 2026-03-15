@@ -28,25 +28,25 @@ export function OrdersModuleView({
   onBack,
   onEditOrder,
 }: OrdersModuleViewProps) {
-  const statusOptions = ['pending', 'approved', 'deposit_received', 'closed', 'cancelled'];
+  const statusOptions = ['order', 'pending', 'approved', 'deposit_received', 'closed', 'cancelled'];
   const statusLabels: Record<string, string> = {
-    pending: 'בהמתנה',
-    approved: 'אושר',
+    order: 'מחכה לאישור',
+    pending: 'הודפס הזמנה להחתמה',
+    approved: 'אושר - הוחתם ע"י הלקוח',
     deposit_received: 'התקבלה מקדמה',
     closed: 'סגור',
     cancelled: 'בוטל',
-    order: 'הזמנה שנשלחה',
     draft: 'טיוטה',
     quote: 'הצעה',
   };
 
   const statusColors: Record<string, string> = {
+    order: 'bg-purple-100 text-purple-800 border-purple-300',
     pending: 'bg-yellow-100 text-yellow-800 border-yellow-300',
     approved: 'bg-green-100 text-green-800 border-green-300',
     deposit_received: 'bg-blue-100 text-blue-800 border-blue-300',
     closed: 'bg-gray-100 text-gray-800 border-gray-300',
     cancelled: 'bg-red-100 text-red-800 border-red-300',
-    order: 'bg-purple-100 text-purple-800 border-purple-300',
     draft: 'bg-orange-100 text-orange-800 border-orange-300',
   };
 
@@ -186,7 +186,7 @@ export function OrdersModuleView({
                             value={order.status}
                             onChange={(e) => onStatusChange(order._id, e.target.value)}
                             disabled={isUpdating}
-                            className={`w-32 h-9 px-2 py-1.5 rounded-lg text-xs font-bold border-2 ${
+                            className={`w-48 h-9 px-2 py-1.5 rounded-lg text-xs font-bold border-2 ${
                               statusColors[order.status] || 'bg-gray-100 text-gray-800'
                             } cursor-pointer disabled:opacity-50`}
                           >
@@ -198,7 +198,7 @@ export function OrdersModuleView({
                           </select>
                         ) : (
                           <div
-                            className={`w-32 h-9 px-3 py-1.5 rounded-lg text-xs font-bold border-2 text-center flex items-center justify-center ${
+                            className={`w-48 h-9 px-3 py-1.5 rounded-lg text-xs font-bold border-2 text-center flex items-center justify-center ${
                               statusColors[order.status] || 'bg-gray-100 text-gray-800'
                             }`}
                           >

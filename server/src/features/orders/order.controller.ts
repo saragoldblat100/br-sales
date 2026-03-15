@@ -70,14 +70,14 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
 
     await orderLog.save();
 
-    // Also save to Order collection with status='order'
+    // Also save to Order collection with status='pending'
     const orderInCollection = new Order({
       orderNumber,
       customerId,
       customerCode,
       customerName,
       lines,
-      status: 'order',
+      status: 'pending',
       notes,
       totalCBM,
       totalAmountILS,
@@ -127,7 +127,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       order: {
         _id: orderLog._id,
         orderNumber: orderLog.orderNumber,
-        status: 'sent',
+        status: 'pending',
         totalCBM: orderLog.totalCBM,
         totalAmount: totalAmountILS > 0 ? totalAmountILS : totalAmountUSD,
         currency,
@@ -274,7 +274,7 @@ export const updateOrderStatus = asyncHandler(async (req: Request, res: Response
   const { id } = req.params;
   const { status } = req.body;
 
-  const validStatuses = ['pending', 'approved', 'deposit_received', 'closed', 'cancelled'];
+  const validStatuses = ['order', 'pending', 'approved', 'deposit_received', 'closed', 'cancelled'];
   if (!validStatuses.includes(status)) {
     return res.status(400).json({ success: false, message: 'סטטוס לא תקין' });
   }
@@ -375,7 +375,7 @@ export const getSentOrders = asyncHandler(async (req: Request, res: Response) =>
  */
 export const updateOrderLines = asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { lines, sendEmail } = req.body;
+  const { lines, notes, sendEmail } = req.body;
   const userId = (req as AuthenticatedRequest).user?.id;
   const userName = (req as AuthenticatedRequest).user?.username;
 
@@ -427,6 +427,9 @@ export const updateOrderLines = asyncHandler(async (req: Request, res: Response)
   order.totalCBM = totalCBM;
   order.totalAmountILS = totalAmountILS;
   order.totalAmountUSD = totalAmountUSD;
+  if (notes !== undefined) {
+    order.notes = notes;
+  }
   await order.save();
 
   // Send email if requested
